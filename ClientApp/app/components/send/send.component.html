@@ -2,404 +2,861 @@
 <nav-menu></nav-menu>
 <nav-bottom></nav-bottom>
 <div class="page page-send">
-    <div class="wallets currentWallet">
-        <button class="wallet" (click)="showWallets = !showWallets">
-            <div class="icon_address icon_address-{{currentWalletIndex}}">
-                <i class="icon-account-balance-wallet"></i>
-            </div>
-            <span class="balance">Σ {{currentWallet.balance | number:'1.2-4'}}</span>
-            <span class="displayName">{{currentWallet.displayName}}</span>
-            <span class="address">{{currentWallet.address}}</span>
-        </button>
+  <div class="wallets currentWallet">
+    <button class="wallet" (click)="showWallets = !showWallets">
+      <div class="icon_address icon_address-{{ currentWalletIndex }}">
+        <i class="icon-account-balance-wallet"></i>
+      </div>
+      <span class="balance"
+        >Σ {{ currentWallet.balance | number: "1.2-4" }}</span
+      >
+      <span class="displayName">{{ currentWallet.displayName }}</span>
+      <span class="address">{{ currentWallet.address }}</span>
+    </button>
+  </div>
+  <div class="wallets" [ngClass]="{ 'show animated fadeIn': showWallets }">
+    <button
+      class="wallet"
+      *ngFor="let w of getWalletsWithoutVault(); let _index = index"
+      (click)="setWallet(w, _index)"
+      [ngClass]="{ actived: currentWallet.address === w.address }"
+    >
+      <div class="icon_address icon_address-{{ _index }}">
+        <i class="icon-account-balance-wallet"></i>
+      </div>
+      <span class="balance">Σ {{ w.balance | number: "1.2-4" }}</span>
+      <span class="displayName">{{ w.displayName }}</span>
+      <span class="address">{{ w.address }}</span>
+      <i class="icon-bullet-circle-stroke-unchecked ico_normal"></i>
+      <i class="icon-adjust ico_activated"></i>
+    </button>
+  </div>
+  <div class="page-wrapper">
+    <div class="filter" *ngIf="!inProgress || response?.isValid">
+      <button
+        *ngFor="let filter of filters; let i = index"
+        [ngClass]="{ active: filter === typeSend }"
+        (click)="typeSend = filter; toggleSendTo()"
+      >
+        <i class="icon-send-wallet" *ngIf="i == 0"></i>
+        <i class="icon-send-mail" *ngIf="i == 1"></i>
+        <i class="icon-send-sms" *ngIf="i == 2"></i>
+        <span>{{ filter | translate }}</span>
+        <span *ngIf="i == 2 || i == 1">(beta)</span>
+      </button>
     </div>
-    <div class="wallets" [ngClass]="{'show animated fadeIn': showWallets}">
-        <button class="wallet" *ngFor="let w of getWalletsWithoutVault(); let _index = index" (click)="setWallet(w, _index)" [ngClass]="{'actived': currentWallet.address === w.address}">
-            <div class="icon_address icon_address-{{_index}}">
-                <i class="icon-account-balance-wallet"></i>
-            </div>
-            <span class="balance">Σ {{w.balance | number:'1.2-4'}}</span>
-            <span class="displayName">{{w.displayName}}</span>
-            <span class="address">{{w.address}}</span>
-            <i class="icon-bullet-circle-stroke-unchecked ico_normal"></i>
-            <i class="icon-adjust ico_activated"></i>
-        </button>
+    <div
+      *ngIf="response && !response.isValid && !response.txid"
+      class="card"
+      role="alert"
+    >
+      <div class="alert-box alert-danger">
+        {{ "Error" | translate }}:
+        <span [innerHtml]="response?.error?.message"></span>
+      </div>
     </div>
-    <div class="page-wrapper">
-        <div class="filter" *ngIf="!inProgress || response?.isValid">
-            <button *ngFor="let filter of filters; let i = index" [ngClass]="{'active': filter === typeSend}" (click)="typeSend = filter;toggleSendTo()">
-                <i class="icon-send-wallet" *ngIf="i == 0"></i>
-                <i class="icon-send-mail" *ngIf="i == 1"></i>
-                <i class="icon-send-sms" *ngIf="i == 2"></i>
-                <span>{{filter | translate}}</span>
-                <span *ngIf="i == 2 || i == 1">(beta)</span>
+    <div *ngIf="response" class="card" role="alert">
+      <div class="alert-box alert-success" *ngIf="response && response.isValid">
+        {{ "Status" | translate }}:
+        {{
+          "Your transaction has been processed, await until we redirect you."
+            | translate
+        }}
+      </div>
+      <div class="alert-box alert-success" *ngIf="response.txid">
+        {{ "Status" | translate }}: {{ response.txid }}
+        {{
+          "Your transaction has been processed, await until we redirect you."
+            | translate
+        }}
+      </div>
+    </div>
+    <form
+      (ngSubmit)="sendPayment()"
+      #sendForm="ngForm"
+      *ngIf="
+        !inProgress &&
+        typeSend == 'ADDRESS' &&
+        (!response || response.status !== 'OK')
+      "
+      autocomplete="off"
+    >
+      <div class="card card-1 address">
+        <span class="cardNumber">1</span>
+        <span class="cardTitle">{{
+          "Please enter a SmartCash username or a SmartCash address" | translate
+        }}</span>
+        <div class="form-input">
+          <label for="address">
+            {{ "SmartCash Address / Username" | translate }}
+            <span class="required">*</span>
+          </label>
+          <input
+            id="address"
+            name="toAddress"
+            type="text"
+            [(ngModel)]="transaction.toAddress"
+            required
+            #toAddress="ngModel"
+            (ngModelChange)="toggleSendTo()"
+          />
+          <small *ngIf="this.selectedSendTo"
+            >{{ "Send to" }}:
+            {{ this.selectedSendTo?.name || this.selectedSendTo?.displayName }}
+          </small>
+          <div class="button-group">
+            <button
+              type="button"
+              class="btn"
+              data-toggle="modal"
+              data-target="#modalQrCode"
+              id="btnQrCode"
+              (click)="startQR('address')"
+              *ngIf="hasQrCode"
+            >
+              <i class="icon-select-all"></i>
             </button>
+            <button
+              type="button"
+              class="btn"
+              data-toggle="modal"
+              data-target="#modalWallets"
+            >
+              <i class="icon-account-balance-wallet"></i>
+            </button>
+            <button
+              type="button"
+              class="btn"
+              data-toggle="modal"
+              data-target="#myModalContact"
+            >
+              <i class="icon-users"></i>
+            </button>
+            <button
+              type="button"
+              class="btn"
+              (click)="selectSmartVault()"
+              *ngIf="smartVault"
+            >
+              <i class="icon-vault"></i>
+            </button>
+          </div>
         </div>
-        <div *ngIf="response && !response.isValid && !response.txid" class="card" role="alert">
-            <div class="alert-box alert-danger">
-                {{'Error' | translate}}: <span [innerHtml]="response?.error?.message"></span>
-            </div>
+      </div>
+      <div class="card card-2">
+        <span class="cardNumber">2</span>
+        <span class="cardTitle">{{ "Enter an amount" | translate }}</span>
+        <div class="form-input input-currency">
+          <label for="amount">
+            {{ "Currency" | translate }}:
+            <span class="required">*</span>
+          </label>
+          <select (change)="returnConversionRate($event.target.value)">
+            <option
+              *ngFor="
+                let fiat of getFiatList();
+                let i = index;
+                trackBy: trackByFn
+              "
+              [value]="fiat.name"
+              [selected]="ticker == fiat.name"
+              >{{ fiat.name }}</option
+            >
+          </select>
         </div>
-        <div *ngIf="response" class="card" role="alert">
-            <div class="alert-box alert-success" *ngIf="response && response.isValid">
-                {{'Status' | translate}}: {{'Your transaction has been processed, await until we redirect you.' | translate}}
-            </div>
-            <div class="alert-box alert-success" *ngIf="response.txid">
-                {{'Status' | translate}}: {{response.txid}} {{'Your transaction has been processed, await until we redirect you.' | translate}}
-            </div>
+        <div class="form-input input-amount">
+          <label for="amountSendPayment">
+            {{ "Amount" | translate }} in {{ ticker }}:
+            <span class="required">*</span>
+          </label>
+          <input
+            id="amountSendPayment"
+            type="text"
+            [(ngModel)]="transaction.amount"
+            name="amount"
+            #amount="ngModel"
+            required
+            autocomplete="off"
+            (input)="onAmountChange($event)"
+            (keypress)="onAmountChange($event)"
+            (ngModelChange)="calculateAmountWithFee($event)"
+            mask="0*.00000000"
+            [dropSpecialCharacters]="false"
+          />
         </div>
-        <form (ngSubmit)="sendPayment()" #sendForm="ngForm" *ngIf="!inProgress && typeSend == 'ADDRESS' && (!response || response.status !== 'OK')" autocomplete="off">
-            <div class="card card-1 address">
-                <span class="cardNumber">1</span>
-                <span class="cardTitle">{{'Please enter a SmartCash username or a SmartCash address' | translate}}</span>
-                <div class="form-input">
-                    <label for="address">
-                        {{'SmartCash Address / Username' | translate}}
-                        <span class="required">*</span>
-                    </label>
-                    <input id="address" name="toAddress" type="text" [(ngModel)]="transaction.toAddress" required #toAddress="ngModel" (ngModelChange)="toggleSendTo()" />
-                    <small *ngIf="this.selectedSendTo">{{'Send to'}}: {{this.selectedSendTo?.name || this.selectedSendTo?.displayName}} </small>
-                    <div class="button-group">
-                        <button type="button" class="btn" data-toggle="modal" data-target="#modalQrCode" id="btnQrCode" (click)="startQR('address');" *ngIf="hasQrCode">
-                            <i class="icon-select-all"></i>
-                        </button>
-                        <button type="button" class="btn" data-toggle="modal" data-target="#modalWallets">
-                            <i class="icon-account-balance-wallet"></i>
-                        </button>
-                        <button type="button" class="btn" data-toggle="modal" data-target="#myModalContact">
-                            <i class="icon-users"></i>
-                        </button>
-                        <button type="button" class="btn" (click)="selectSmartVault()" *ngIf="smartVault">
-                            <i class="icon-vault"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <div class="card card-2">
-                <span class="cardNumber">2</span>
-                <span class="cardTitle">{{'Enter an amount' | translate}}</span>
-                <div class="form-input input-currency">
-                    <label for="amount">
-                        {{'Currency' | translate}}:
-                        <span class="required">*</span>
-                    </label>
-                    <select (change)="returnConversionRate($event.target.value)">
-                        <option *ngFor="let fiat of getFiatList();let i = index; trackBy: trackByFn" [value]="fiat.name" [selected]="ticker == fiat.name">{{fiat.name}}</option>
-                    </select>
-                </div>
-                <div class="form-input input-amount">
-                    <label for="amountSendPayment">
-                        {{'Amount' | translate}} in {{ticker}}:
-                        <span class="required">*</span>
-                    </label>
-                    <input id="amountSendPayment"
-                           type="text"
-                           [(ngModel)]="transaction.amount"
-                           name="amount"
-                           #amount="ngModel"
-                           required
-                           autocomplete="off"
-                           (input)="onAmountChange($event)"
-                           (keypress)="onAmountChange($event)"
-                           mask='0*.00000000'
-                           [dropSpecialCharacters]="false" />
-                </div>
-                <div class="form-input input-amoutWithFee" style="width:100%;">
-                    <label for="amountWithFee">
-                        {{'Amount with fee' | translate}} in SMART <span>({{transaction.amount}} + {{transactionExtended.fee || '0.0'}})</span>:
-                    </label>
-                    <input id="amountWithFee" type="text" [(ngModel)]="transactionExtended.amountWithFee" name="amountWithFee" #amount="ngModel" required autocomplete="off" disabled />
-                    <span [hidden]="hasBalance" class="alert alert-danger">{{'This amount exceeds your balance.' | translate}}</span>
-                </div>
-            </div>
-            <div class="card card-3">
-                <span class="cardNumber">3</span>
-                <span class="cardTitle">{{'Payment Confirmation' | translate}}</span>
-                <div class="form-input input-password">
-                    <label for="password">
-                        {{'Password' | translate}}:
-                        <span class="required">*</span>
-                        <span [hidden]="password.valid || password.pristine" class="alert alert-danger">{{'The Password is required' | translate}}</span>
-                    </label>
-                    <input id="password" [type]="inputTypePassword" value="" [(ngModel)]="transaction.password" name="password" required #password="ngModel" />
-                    <button type="button" data-toggle="modal" data-target="#modalQrCode" id="btnQrCode" (click)="startQR('password')" *ngIf="hasQrCode">
-                        <i class="icon-select-all"></i>
-                    </button>
-                    <button type="button" (click)="showPassword()" *ngIf="inputTypePassword=='password'" title="Show Password">
-                        <i class="icon-eye"></i>
-                    </button>
-                    <button type="button" (click)="showPassword()" *ngIf="inputTypePassword=='text'" title="Hide Password ">
-                        <i class="icon-eye"></i>
-                    </button>
-                </div>
-                <div class="form-input clear" *ngIf="_shared.user.is2FAEnabled && _shared.user.require2faToSend">
-                    <label for="2fa">{{'Two FA Code' | translate}}:<span class="required">*</span> <span [hidden]="code.valid || code.pristine" class="alert alert-danger">{{'A valid code is required.' | translate}}</span></label>
-                    <input id="2fa" name="code" type="text" value="" [(ngModel)]="transaction.code" #code="ngModel" autocomplete="off" />
-                </div>
-                <button type="submit" class="btn btn-success" [disabled]="inProgress || !sendForm.form.valid">
-                    <span>{{'Send' | translate}} {{transactionExtended.amountWithConversion}} SMART</span>
-                    <i class="icon-send"></i>
-                </button>
-            </div>
-        </form>
-        <form (ngSubmit)="createOrder()" class="form-email" #sendFormEmail="ngForm" *ngIf="!inProgress && typeSend == 'EMAIL' && (!response || response.status !== 'OK')" autocomplete="off">
-            <div class="card card-1">
-                <span class="cardNumber">1</span>
-                <span class="cardTitle">{{'Enter a email and amount' | translate}}</span>
-                <span class="cardSubTitle">({{'If unclaimed, SmartCash returns to your address after 7 days.' | translate}})</span>
-                <div class="button-group">
-                    <button type="button" class="btn" data-toggle="modal" data-target="#myModalContact">
-                        <i class="icon-users"></i>
-                    </button>
-                </div>
-                <div class="form-input">
-                    <label for="amount">
-                        {{'Email' | translate}}:
-                        <span class="required">*</span>
-                    </label>
-                    <input id="email" type="text" [(ngModel)]="transaction.destinationEmail" (ngModelChange)="toggleSendTo()" name="email" #email="ngModel" required autocomplete="off" />
-                    <small *ngIf="this.selectedSendTo">{{'Send to'}}: {{this.selectedSendTo?.name || this.selectedSendTo?.displayName}} </small>
-                </div>
-                <div class="form-input">
-                    <label for="message">{{'Message' | translate}}:</label>
-                    <textarea name="message" #message="ngModel" [(ngModel)]="messageToSend" id="message" cols="30" rows="2"></textarea>
-                </div>
-                <div class="form-input input-currency">
-                    <label for="amount">
-                        {{'Currency' | translate}}:
-                        <span class="required">*</span>
-                    </label>
-                    <select (change)="returnConversionRate($event.target.value)" style="font-weight: 300;font-family: inherit;outline: 0;border: 0;border-bottom: 1px solid #efefef;display: block;width: 100%;padding: 5px 0 10px;font-size: 14px;">
-                        <option *ngFor="let fiat of getFiatList();let i = index; trackBy: trackByFn" [value]="fiat.name" [selected]="ticker == fiat.name">{{fiat.name}}</option>
-                    </select>
-                </div>
-                <div class="form-input input-amount">
-                    <label for="amountOrder">
-                        {{'Amount' | translate}} in {{ticker}}:
-                        <span class="required">*</span>
-                    </label>
-                    <input id="amountOrder"
-                           type="text"
-                           [(ngModel)]="transaction.amount"
-                           name="amount"
-                           #amount="ngModel"
-                           required
-                           autocomplete="off"
-                           mask="0*.0000"
-                           [dropSpecialCharacters]="false" />
-                </div>
-                <div class="form-input input-amoutWithFee" style="width:100%;">
-                    <label for="amountWithFee">
-                        {{'Amount with fee' | translate}} in SMART <span>({{transaction.amount}} + {{transactionExtended.fee || '0.0'}})</span>:
-                    </label>
-                    <input id="amountWithFee" type="number" [(ngModel)]="transactionExtended.amountWithFee" name="amountWithFee" #amount="ngModel" required autocomplete="off" disabled />
-                    <span [hidden]="hasBalance" class="alert alert-danger">{{'This amount exceeds your balance.' | translate}}</span>
-                    <span [hidden]="hasBalanceExceeded" class="alert alert-danger">{{'This amount exceeds the limit.' | translate}}</span>
-                </div>
-            </div>
-            <div class="card card-2">
-                <span class="cardNumber">2</span>
-                <span class="cardTitle">{{'Payment Confirmation' | translate}}</span>
-                <div class="form-input input-password">
-                    <label for="password">
-                        {{'Password' | translate}}:
-                        <span class="required">*</span>
-                        <span [hidden]="password.valid || password.pristine" class="alert alert-danger">{{'The Password is required' | translate}}</span>
-                    </label>
-                    <input id="password" [type]="inputTypePassword" value="" [(ngModel)]="transaction.password" name="password" required #password="ngModel" />
-                    <button type="button" data-toggle="modal" data-target="#modalQrCode" id="btnQrCode" (click)="startQR('password')" *ngIf="hasQrCode">
-                        <i class="icon-select-all"></i>
-                    </button>
-                    <button type="button" (click)="showPassword()" *ngIf="inputTypePassword=='password'" title="Show Password">
-                        <i class="icon-eye"></i>
-                    </button>
-                    <button type="button" (click)="showPassword()" *ngIf="inputTypePassword=='text'" title="Hide Password ">
-                        <i class="icon-eye"></i>
-                    </button>
-                </div>
-                <div class="form-input clear" *ngIf="_shared.user.is2FAEnabled && _shared.user.require2faToSend">
-                    <label for="2fa">{{'Two FA Code' | translate}}:<span class="required">*</span> <span [hidden]="code.valid || code.pristine" class="alert alert-danger">{{'A valid code is required.' | translate}}</span></label>
-                    <input id="2fa" name="code" type="text" value="" [(ngModel)]="transaction.code" #code="ngModel" autocomplete="off" />
-                </div>
-                <button type="submit" class="btn btn-success" [disabled]="inProgress || !sendFormEmail.form.valid">
-                    <span>{{'Send' | translate}} {{transactionExtended.amountWithConversion}} SMART</span>
-                    <i class="icon-send"></i>
-                </button>
-            </div>
-        </form>
-        <form (ngSubmit)="createOrder()" #sendFormSMS="ngForm" autocomplete="off" class="form-sms" *ngIf="!inProgress && typeSend == 'SMS' && (!response || response.status !== 'OK')">
-            <div class="card card-1">
-                <span class="cardNumber">1</span>
-                <span class="cardTitle">{{'Enter a mobile phone number and amount' | translate}}</span>
-                <span class="cardSubTitle">({{'If unclaimed, SmartCash returns to your address after 7 days.' | translate}})</span>
-                <div class="button-group">
-                    <button type="button" class="btn" data-toggle="modal" data-target="#myModalContact">
-                        <i class="icon-users"></i>
-                    </button>
-                </div>
-                <div class="form-input">
-                    <label for="amount">
-                        {{'Phone number' | translate}}
-                        <span class="required">*</span>
-                    </label>
-                    <phone-number [(ngModel)]="transaction.phoneNumber" [defaultCountry]="defaultCountry" [required]="true" [callback]="toggleSendTo()" name="phoneNumber" #phoneNumber="ngModel"></phone-number>
-                    <small *ngIf="this.selectedSendTo">{{'Send to'}}: {{this.selectedSendTo?.name || this.selectedSendTo?.displayName}} </small>
-                </div>
-                <div class="form-input input-currency">
-                    <label for="amount">
-                        {{'Currency' | translate}}:
-                        <span class="required">*</span>
-                    </label>
-                    <select (change)="returnConversionRate($event.target.value)">
-                        <option *ngFor="let fiat of getFiatList();let i = index; trackBy: trackByFn" [value]="fiat.name" [selected]="ticker == fiat.name">{{fiat.name}}</option>
-                    </select>
-                </div>
-                <div class="form-input input-amount">
-                    <label for="amountSMS">
-                        {{'Amount' | translate}} in {{ticker}}:
-                        <span class="required">*</span>
-                    </label>
-                    <input id="amountSMS"
-                           type="text"
-                           [(ngModel)]="transaction.amount"
-                           name="amount"
-                           #amount="ngModel"
-                           required
-                           autocomplete="off"
-                           mask="0*.0000"
-                           [dropSpecialCharacters]="false" />
-                </div>
-                <div class="form-input input-amoutWithFee" style="width:100%;">
-                    <label for="amountWithFee">
-                        {{'Amount with fee' | translate}} in SMART <span>({{transaction.amount}} + {{transactionExtended.fee || '0.0'}})</span>:
-                    </label>
-                    <input id="amountWithFee" type="number" [(ngModel)]="transactionExtended.amountWithFee" name="amountWithFee" #amount="ngModel" required autocomplete="off" disabled />
-                    <span [hidden]="hasBalance" class="alert alert-danger">{{'This amount exceeds your balance.' | translate}}</span>
-                </div>
-            </div>
-            <div class="card card-2">
-                <span class="cardNumber">2</span>
-                <span class="cardTitle">{{'Payment Confirmation' | translate}}</span>
-                <div class="form-input input-password">
-                    <label for="password">
-                        {{'Password' | translate}}:
-                        <span class="required">*</span>
-                        <span [hidden]="password.valid || password.pristine" class="alert alert-danger">{{'The Password is required' | translate}}</span>
-                    </label>
-                    <input id="password" [type]="inputTypePassword" value="" [(ngModel)]="transaction.password" name="password" required #password="ngModel" />
-                    <button type="button" data-toggle="modal" data-target="#modalQrCode" id="btnQrCode" (click)="startQR('password')" *ngIf="hasQrCode">
-                        <i class="icon-select-all"></i>
-                    </button>
-                    <button type="button" (click)="showPassword()" *ngIf="inputTypePassword=='password'" title="Show Password">
-                        <i class="icon-eye"></i>
-                    </button>
-                    <button type="button" (click)="showPassword()" *ngIf="inputTypePassword=='text'" title="Hide Password ">
-                        <i class="icon-eye"></i>
-                    </button>
-                </div>
-                <div class="form-input clear" *ngIf="_shared.user.is2FAEnabled && _shared.user.require2faToSend">
-                    <label for="2fa">{{'Two FA Code' | translate}}:<span class="required">*</span> <span [hidden]="code.valid || code.pristine" class="alert alert-danger">{{'A valid code is required.' | translate}}</span></label>
-                    <input id="2fa" name="code" type="text" value="" [(ngModel)]="transaction.code" #code="ngModel" autocomplete="off" />
-                </div>
-                <button type="submit" class="btn btn-success" [disabled]="inProgress || !sendFormSMS.form.valid">
-                    <span>{{'Send' | translate}} {{transactionExtended.amountWithConversion}} SMART</span>
-                    <i class="icon-send"></i>
-                </button>
-            </div>
-        </form>
+        <div class="form-input input-amoutWithFee" style="width:100%;">
+          <label for="amountWithFee">
+            {{ "Amount with fee" | translate }} in SMART
+            <span
+              >({{ transaction.amount }} +
+              {{ transactionExtended.fee || "0.0" }})</span
+            >:
+          </label>
+          <input
+            id="amountWithFee"
+            type="text"
+            [(ngModel)]="transactionExtended.amountWithFee"
+            name="amountWithFee"
+            #amount="ngModel"
+            required
+            autocomplete="off"
+            disabled
+          />
+          <span [hidden]="hasBalance" class="alert alert-danger">{{
+            "This amount exceeds your balance." | translate
+          }}</span>
+        </div>
+      </div>
+      <div class="card card-3">
+        <span class="cardNumber">3</span>
+        <span class="cardTitle">{{ "Payment Confirmation" | translate }}</span>
+        <div class="form-input input-password">
+          <label for="password">
+            {{ "Password" | translate }}:
+            <span class="required">*</span>
+            <span
+              [hidden]="password.valid || password.pristine"
+              class="alert alert-danger"
+              >{{ "The Password is required" | translate }}</span
+            >
+          </label>
+          <input
+            id="password"
+            [type]="inputTypePassword"
+            value=""
+            [(ngModel)]="transaction.password"
+            name="password"
+            required
+            #password="ngModel"
+          />
+          <button
+            type="button"
+            data-toggle="modal"
+            data-target="#modalQrCode"
+            id="btnQrCode"
+            (click)="startQR('password')"
+            *ngIf="hasQrCode"
+          >
+            <i class="icon-select-all"></i>
+          </button>
+          <button
+            type="button"
+            (click)="showPassword()"
+            *ngIf="inputTypePassword == 'password'"
+            title="Show Password"
+          >
+            <i class="icon-eye"></i>
+          </button>
+          <button
+            type="button"
+            (click)="showPassword()"
+            *ngIf="inputTypePassword == 'text'"
+            title="Hide Password "
+          >
+            <i class="icon-eye"></i>
+          </button>
+        </div>
+        <div
+          class="form-input clear"
+          *ngIf="_shared.user.is2FAEnabled && _shared.user.require2faToSend"
+        >
+          <label for="2fa"
+            >{{ "Two FA Code" | translate }}:<span class="required">*</span>
+            <span
+              [hidden]="code.valid || code.pristine"
+              class="alert alert-danger"
+              >{{ "A valid code is required." | translate }}</span
+            ></label
+          >
+          <input
+            id="2fa"
+            name="code"
+            type="text"
+            value=""
+            [(ngModel)]="transaction.code"
+            #code="ngModel"
+            autocomplete="off"
+          />
+        </div>
+        <button
+          type="submit"
+          class="btn btn-success"
+          [disabled]="inProgress || !sendForm.form.valid"
+        >
+          <span
+            >{{ "Send" | translate }}
+            {{ transactionExtended.amountWithConversion }} SMART</span
+          >
+          <i class="icon-send"></i>
+        </button>
+      </div>
+    </form>
+    <form
+      (ngSubmit)="createOrder()"
+      class="form-email"
+      #sendFormEmail="ngForm"
+      *ngIf="
+        !inProgress &&
+        typeSend == 'EMAIL' &&
+        (!response || response.status !== 'OK')
+      "
+      autocomplete="off"
+    >
+      <div class="card card-1">
+        <span class="cardNumber">1</span>
+        <span class="cardTitle">{{
+          "Enter a email and amount" | translate
+        }}</span>
+        <span class="cardSubTitle"
+          >({{
+            "If unclaimed, SmartCash returns to your address after 7 days."
+              | translate
+          }})</span
+        >
+        <div class="button-group">
+          <button
+            type="button"
+            class="btn"
+            data-toggle="modal"
+            data-target="#myModalContact"
+          >
+            <i class="icon-users"></i>
+          </button>
+        </div>
+        <div class="form-input">
+          <label for="amount">
+            {{ "Email" | translate }}:
+            <span class="required">*</span>
+          </label>
+          <input
+            id="email"
+            type="text"
+            [(ngModel)]="transaction.destinationEmail"
+            (ngModelChange)="toggleSendTo()"
+            name="email"
+            #email="ngModel"
+            required
+            autocomplete="off"
+          />
+          <small *ngIf="this.selectedSendTo"
+            >{{ "Send to" }}:
+            {{ this.selectedSendTo?.name || this.selectedSendTo?.displayName }}
+          </small>
+        </div>
+        <div class="form-input">
+          <label for="message">{{ "Message" | translate }}:</label>
+          <textarea
+            name="message"
+            #message="ngModel"
+            [(ngModel)]="messageToSend"
+            id="message"
+            cols="30"
+            rows="2"
+          ></textarea>
+        </div>
+        <div class="form-input input-currency">
+          <label for="amount">
+            {{ "Currency" | translate }}:
+            <span class="required">*</span>
+          </label>
+          <select
+            (change)="returnConversionRate($event.target.value)"
+            style="font-weight: 300;font-family: inherit;outline: 0;border: 0;border-bottom: 1px solid #efefef;display: block;width: 100%;padding: 5px 0 10px;font-size: 14px;"
+          >
+            <option
+              *ngFor="
+                let fiat of getFiatList();
+                let i = index;
+                trackBy: trackByFn
+              "
+              [value]="fiat.name"
+              [selected]="ticker == fiat.name"
+              >{{ fiat.name }}</option
+            >
+          </select>
+        </div>
+        <div class="form-input input-amount">
+          <label for="amountOrder">
+            {{ "Amount" | translate }} in {{ ticker }}:
+            <span class="required">*</span>
+          </label>
+          <input
+            id="amountOrder"
+            type="text"
+            [(ngModel)]="transaction.amount"
+            name="amount"
+            #amount="ngModel"
+            required
+            autocomplete="off"
+            mask="0*.0000"
+            [dropSpecialCharacters]="false"
+          />
+        </div>
+        <div class="form-input input-amoutWithFee" style="width:100%;">
+          <label for="amountWithFee">
+            {{ "Amount with fee" | translate }} in SMART
+            <span
+              >({{ transaction.amount }} +
+              {{ transactionExtended.fee || "0.0" }})</span
+            >:
+          </label>
+          <input
+            id="amountWithFee"
+            type="number"
+            [(ngModel)]="transactionExtended.amountWithFee"
+            name="amountWithFee"
+            #amount="ngModel"
+            required
+            autocomplete="off"
+            disabled
+          />
+          <span [hidden]="hasBalance" class="alert alert-danger">{{
+            "This amount exceeds your balance." | translate
+          }}</span>
+          <span [hidden]="hasBalanceExceeded" class="alert alert-danger">{{
+            "This amount exceeds the limit." | translate
+          }}</span>
+        </div>
+      </div>
+      <div class="card card-2">
+        <span class="cardNumber">2</span>
+        <span class="cardTitle">{{ "Payment Confirmation" | translate }}</span>
+        <div class="form-input input-password">
+          <label for="password">
+            {{ "Password" | translate }}:
+            <span class="required">*</span>
+            <span
+              [hidden]="password.valid || password.pristine"
+              class="alert alert-danger"
+              >{{ "The Password is required" | translate }}</span
+            >
+          </label>
+          <input
+            id="password"
+            [type]="inputTypePassword"
+            value=""
+            [(ngModel)]="transaction.password"
+            name="password"
+            required
+            #password="ngModel"
+          />
+          <button
+            type="button"
+            data-toggle="modal"
+            data-target="#modalQrCode"
+            id="btnQrCode"
+            (click)="startQR('password')"
+            *ngIf="hasQrCode"
+          >
+            <i class="icon-select-all"></i>
+          </button>
+          <button
+            type="button"
+            (click)="showPassword()"
+            *ngIf="inputTypePassword == 'password'"
+            title="Show Password"
+          >
+            <i class="icon-eye"></i>
+          </button>
+          <button
+            type="button"
+            (click)="showPassword()"
+            *ngIf="inputTypePassword == 'text'"
+            title="Hide Password "
+          >
+            <i class="icon-eye"></i>
+          </button>
+        </div>
+        <div
+          class="form-input clear"
+          *ngIf="_shared.user.is2FAEnabled && _shared.user.require2faToSend"
+        >
+          <label for="2fa"
+            >{{ "Two FA Code" | translate }}:<span class="required">*</span>
+            <span
+              [hidden]="code.valid || code.pristine"
+              class="alert alert-danger"
+              >{{ "A valid code is required." | translate }}</span
+            ></label
+          >
+          <input
+            id="2fa"
+            name="code"
+            type="text"
+            value=""
+            [(ngModel)]="transaction.code"
+            #code="ngModel"
+            autocomplete="off"
+          />
+        </div>
+        <button
+          type="submit"
+          class="btn btn-success"
+          [disabled]="inProgress || !sendFormEmail.form.valid"
+        >
+          <span
+            >{{ "Send" | translate }}
+            {{ transactionExtended.amountWithConversion }} SMART</span
+          >
+          <i class="icon-send"></i>
+        </button>
+      </div>
+    </form>
+    <form
+      (ngSubmit)="createOrder()"
+      #sendFormSMS="ngForm"
+      autocomplete="off"
+      class="form-sms"
+      *ngIf="
+        !inProgress &&
+        typeSend == 'SMS' &&
+        (!response || response.status !== 'OK')
+      "
+    >
+      <div class="card card-1">
+        <span class="cardNumber">1</span>
+        <span class="cardTitle">{{
+          "Enter a mobile phone number and amount" | translate
+        }}</span>
+        <span class="cardSubTitle"
+          >({{
+            "If unclaimed, SmartCash returns to your address after 7 days."
+              | translate
+          }})</span
+        >
+        <div class="button-group">
+          <button
+            type="button"
+            class="btn"
+            data-toggle="modal"
+            data-target="#myModalContact"
+          >
+            <i class="icon-users"></i>
+          </button>
+        </div>
+        <div class="form-input">
+          <label for="amount">
+            {{ "Phone number" | translate }}
+            <span class="required">*</span>
+          </label>
+          <phone-number
+            [(ngModel)]="transaction.phoneNumber"
+            [defaultCountry]="defaultCountry"
+            [required]="true"
+            [callback]="toggleSendTo()"
+            name="phoneNumber"
+            #phoneNumber="ngModel"
+          ></phone-number>
+          <small *ngIf="this.selectedSendTo"
+            >{{ "Send to" }}:
+            {{ this.selectedSendTo?.name || this.selectedSendTo?.displayName }}
+          </small>
+        </div>
+        <div class="form-input input-currency">
+          <label for="amount">
+            {{ "Currency" | translate }}:
+            <span class="required">*</span>
+          </label>
+          <select (change)="returnConversionRate($event.target.value)">
+            <option
+              *ngFor="
+                let fiat of getFiatList();
+                let i = index;
+                trackBy: trackByFn
+              "
+              [value]="fiat.name"
+              [selected]="ticker == fiat.name"
+              >{{ fiat.name }}</option
+            >
+          </select>
+        </div>
+        <div class="form-input input-amount">
+          <label for="amountSMS">
+            {{ "Amount" | translate }} in {{ ticker }}:
+            <span class="required">*</span>
+          </label>
+          <input
+            id="amountSMS"
+            type="text"
+            [(ngModel)]="transaction.amount"
+            name="amount"
+            #amount="ngModel"
+            required
+            autocomplete="off"
+            mask="0*.0000"
+            [dropSpecialCharacters]="false"
+          />
+        </div>
+        <div class="form-input input-amoutWithFee" style="width:100%;">
+          <label for="amountWithFee">
+            {{ "Amount with fee" | translate }} in SMART
+            <span
+              >({{ transaction.amount }} +
+              {{ transactionExtended.fee || "0.0" }})</span
+            >:
+          </label>
+          <input
+            id="amountWithFee"
+            type="number"
+            [(ngModel)]="transactionExtended.amountWithFee"
+            name="amountWithFee"
+            #amount="ngModel"
+            required
+            autocomplete="off"
+            disabled
+          />
+          <span [hidden]="hasBalance" class="alert alert-danger">{{
+            "This amount exceeds your balance." | translate
+          }}</span>
+        </div>
+      </div>
+      <div class="card card-2">
+        <span class="cardNumber">2</span>
+        <span class="cardTitle">{{ "Payment Confirmation" | translate }}</span>
+        <div class="form-input input-password">
+          <label for="password">
+            {{ "Password" | translate }}:
+            <span class="required">*</span>
+            <span
+              [hidden]="password.valid || password.pristine"
+              class="alert alert-danger"
+              >{{ "The Password is required" | translate }}</span
+            >
+          </label>
+          <input
+            id="password"
+            [type]="inputTypePassword"
+            value=""
+            [(ngModel)]="transaction.password"
+            name="password"
+            required
+            #password="ngModel"
+          />
+          <button
+            type="button"
+            data-toggle="modal"
+            data-target="#modalQrCode"
+            id="btnQrCode"
+            (click)="startQR('password')"
+            *ngIf="hasQrCode"
+          >
+            <i class="icon-select-all"></i>
+          </button>
+          <button
+            type="button"
+            (click)="showPassword()"
+            *ngIf="inputTypePassword == 'password'"
+            title="Show Password"
+          >
+            <i class="icon-eye"></i>
+          </button>
+          <button
+            type="button"
+            (click)="showPassword()"
+            *ngIf="inputTypePassword == 'text'"
+            title="Hide Password "
+          >
+            <i class="icon-eye"></i>
+          </button>
+        </div>
+        <div
+          class="form-input clear"
+          *ngIf="_shared.user.is2FAEnabled && _shared.user.require2faToSend"
+        >
+          <label for="2fa"
+            >{{ "Two FA Code" | translate }}:<span class="required">*</span>
+            <span
+              [hidden]="code.valid || code.pristine"
+              class="alert alert-danger"
+              >{{ "A valid code is required." | translate }}</span
+            ></label
+          >
+          <input
+            id="2fa"
+            name="code"
+            type="text"
+            value=""
+            [(ngModel)]="transaction.code"
+            #code="ngModel"
+            autocomplete="off"
+          />
+        </div>
+        <button
+          type="submit"
+          class="btn btn-success"
+          [disabled]="inProgress || !sendFormSMS.form.valid"
+        >
+          <span
+            >{{ "Send" | translate }}
+            {{ transactionExtended.amountWithConversion }} SMART</span
+          >
+          <i class="icon-send"></i>
+        </button>
+      </div>
+    </form>
+  </div>
+  <div
+    class="modal animated fadeIn "
+    id="modalQrCode"
+    role="dialog"
+    style="display:none"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button
+            type="button"
+            class="close"
+            data-dismiss="modal"
+            (click)="stopQR()"
+          >
+            &times;
+          </button>
+          <h4 class="modal-title">{{ "Scan your QR CODE" | translate }}</h4>
+        </div>
+        <div class="modal-body">
+          <iframe scrolling="no" id="iQR" src="" class="iframeQR"></iframe>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-dismiss="modal"
+            (click)="stopQR()"
+          >
+            {{ "Cancel" | translate }}
+          </button>
+        </div>
+      </div>
     </div>
-    <div class="modal animated fadeIn " id="modalQrCode" role="dialog" style="display:none">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" (click)="stopQR();">&times;</button>
-                    <h4 class="modal-title">{{'Scan your QR CODE' | translate}}</h4>
-                </div>
-                <div class="modal-body">
-                    <iframe scrolling="no" id="iQR" src="" class="iframeQR"></iframe>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal" (click)="stopQR();">{{'Cancel' | translate}}</button>
-                </div>
-            </div>
-        </div>
-    </div>
+  </div>
 
-    <div class="modal animated fadeIn" id="myModalContact" role="dialog" style="display:none;">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">{{contacts?.length}} {{'Contacts' | translate}}</h4>
-                    <a [routerLink]="['/contacts']">{{'Manage contacts' | translate}}</a>
-                </div>
-                <div class="modal-body">
-                    <table class="table">
-                        <tbody *ngIf="contacts && _.size(contacts) > 0">
-                            <tr *ngFor="let contact of listContacts()">
-                                <td class="contact">{{contact.name}}</td>
-                                <td class="btn">
-                                    <button class='btn btn-select btn-yellow' (click)='select(contact)'>
-                                        {{'Select' | translate}}
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                        <tbody *ngIf="!contacts || _.size(contacts) == 0">
-                            <tr>
-                                <td>
-                                    <div class="alert-box alert-warning">{{'No contacts found.' | translate}}</div>
-                                </td>
-                            </tr>
-                        </tbody>
-                        <tbody *ngIf="_.size(contacts) > 0 && _.size(listContacts()) == 0">
-                            <tr>
-                                <td>
-                                    <div class="alert-box alert-warning" *ngIf="typeSend == 'EMAIL'">{{'You don\'t have any email address in your contacts list' | translate}}</div>
-                                    <div class="alert-box alert-warning" *ngIf="typeSend == 'SMS'">{{'You don\'t have any phone number in your contacts list' | translate}}</div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">{{'Cancel' | translate}}</button>
-                </div>
-            </div>
+  <div
+    class="modal animated fadeIn"
+    id="myModalContact"
+    role="dialog"
+    style="display:none;"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">
+            &times;
+          </button>
+          <h4 class="modal-title">
+            {{ contacts?.length }} {{ "Contacts" | translate }}
+          </h4>
+          <a [routerLink]="['/contacts']">{{
+            "Manage contacts" | translate
+          }}</a>
         </div>
+        <div class="modal-body">
+          <table class="table">
+            <tbody *ngIf="contacts && _.size(contacts) > 0">
+              <tr *ngFor="let contact of listContacts()">
+                <td class="contact">{{ contact.name }}</td>
+                <td class="btn">
+                  <button
+                    class="btn btn-select btn-yellow"
+                    (click)="select(contact)"
+                  >
+                    {{ "Select" | translate }}
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+            <tbody *ngIf="!contacts || _.size(contacts) == 0">
+              <tr>
+                <td>
+                  <div class="alert-box alert-warning">
+                    {{ "No contacts found." | translate }}
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+            <tbody *ngIf="_.size(contacts) > 0 && _.size(listContacts()) == 0">
+              <tr>
+                <td>
+                  <div
+                    class="alert-box alert-warning"
+                    *ngIf="typeSend == 'EMAIL'"
+                  >
+                    {{
+                      "You don't have any email address in your contacts list"
+                        | translate
+                    }}
+                  </div>
+                  <div
+                    class="alert-box alert-warning"
+                    *ngIf="typeSend == 'SMS'"
+                  >
+                    {{
+                      "You don't have any phone number in your contacts list"
+                        | translate
+                    }}
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">
+            {{ "Cancel" | translate }}
+          </button>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <div class="modal animated fadeIn" id="modalWallets" role="dialog" style="display:none;">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">{{_shared.wallet?.length}} {{'Wallets' | translate}}</h4>
-                </div>
-                <div class="modal-body">
-                    <table class="table">
-                        <tbody *ngIf="_shared.wallet && _.size(_shared.wallet) > 0">
-                            <tr *ngFor="let wallet of getWallets()">
-                                <td class="contact">{{wallet.displayName}}</td>
-                                <td class="btn">
-                                    <button class='btn btn-select btn-yellow' (click)='selectWallet(wallet)'>
-                                        {{'Select' | translate}}
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                        <tbody *ngIf="!_shared.wallet || _.size(_shared.wallet) == 0">
-                            <tr>
-                                <td>
-                                    <div class="alert alert-warning">{{'No wallets found.' | translate}}</div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="modal-footer text-right">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">{{'Cancel' | translate}}</button>
-                </div>
-            </div>
+  <div
+    class="modal animated fadeIn"
+    id="modalWallets"
+    role="dialog"
+    style="display:none;"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">
+            &times;
+          </button>
+          <h4 class="modal-title">
+            {{ _shared.wallet?.length }} {{ "Wallets" | translate }}
+          </h4>
         </div>
+        <div class="modal-body">
+          <table class="table">
+            <tbody *ngIf="_shared.wallet && _.size(_shared.wallet) > 0">
+              <tr *ngFor="let wallet of getWallets()">
+                <td class="contact">{{ wallet.displayName }}</td>
+                <td class="btn">
+                  <button
+                    class="btn btn-select btn-yellow"
+                    (click)="selectWallet(wallet)"
+                  >
+                    {{ "Select" | translate }}
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+            <tbody *ngIf="!_shared.wallet || _.size(_shared.wallet) == 0">
+              <tr>
+                <td>
+                  <div class="alert alert-warning">
+                    {{ "No wallets found." | translate }}
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="modal-footer text-right">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">
+            {{ "Cancel" | translate }}
+          </button>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
