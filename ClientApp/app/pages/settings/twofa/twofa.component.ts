@@ -115,7 +115,6 @@ export class TwoFaComponent {
   }
 
   async getNewTwoFa() {
-    Util.setButtonAsWaitState(this.btnSubmit);
     this.inProgress = true;
     this.response = undefined;
     this.response2 = undefined;
@@ -127,7 +126,6 @@ export class TwoFaComponent {
     } catch (e) {
       this.errorMessage = e.message;
     } finally {
-      Util.setButtonAsReadyState(this.btnSubmit);
       this.inProgress = false;
     }
   }
