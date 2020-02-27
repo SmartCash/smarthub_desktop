@@ -20,8 +20,8 @@ export class CurrentPriceService {
             var json = res.json();
             console.log(json);
             var model = [{
-              price_usd: json.items[0].smartcash.usd.toString(),
-              price_btc: json.items[0].smartcash.btc.toString(),
+              price_usd: json.smartcash.usd.toString(),
+              price_btc: json.smartcash.btc.toString(),
             }];
 
             this._shared.dataStore.currentPrice = model;
