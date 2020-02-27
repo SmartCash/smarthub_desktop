@@ -139,10 +139,12 @@ namespace webwallet.Controllers
       {
         using (var httpClient = new HttpClient())
         {
-          var response = await httpClient.GetAsync(this._config["ApiDomain"] + "/v1/exchange/currencies?limit=1");
-          var priceJson = await response.Content.ReadAsStringAsync();
-          var json = JObject.Parse(priceJson.Replace("[", "").Replace("]", ""));
-          return json["items"]["currencies"];
+          var response = await httpClient.GetAsync("https://api.coingecko.com/api/v3/simple/supported_vs_currencies");
+          return JsonConvert.DeserializeObject<dynamic>(await response.Content.ReadAsStringAsync());
+
+          //var priceJson = await response.Content.ReadAsStringAsync();
+          //var json = JObject.Parse(priceJson.Replace("[", "").Replace("]", ""));
+          //return json["items"]["currencies"];
         }
       }
       catch (Exception ex)
