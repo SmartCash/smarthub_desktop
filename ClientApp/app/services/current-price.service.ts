@@ -18,7 +18,6 @@ export class CurrentPriceService {
           .get(url)
           .map((res) => {
             var json = res.json();
-            console.log(json);
             var model = [{
               price_usd: json.smartcash.usd.toString(),
               price_btc: json.smartcash.btc.toString(),
@@ -31,8 +30,20 @@ export class CurrentPriceService {
     return this._shared.dataStore.currentPrice;
   }
 
-  async getCurrentPriceInExchange() {
-    let url = `${this.baseUrl}api/wallet/getcurrentpricewithcoin`;
+  async getCurrentPriceInExchange(currency = 'usd,btc') {
+    let url = `${this.baseUrl}api/wallet/getcurrentprice?currencies=${currency}`;
+
+    return await new Promise<any>((resolve, reject) => {
+      $.get(url).done((data) => {
+        resolve(data);
+      }).fail((err) => {
+        reject(err);
+      });
+    });
+  }
+
+  async getListCurrencies() {
+    let url = `${this.baseUrl}api/wallet/getcurrentlist`;
 
     return await new Promise<number>((resolve, reject) => {
       $.get(url).done((data) => {

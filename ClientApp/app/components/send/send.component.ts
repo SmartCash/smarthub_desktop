@@ -190,8 +190,8 @@ export class SendComponent implements OnInit {
   }
 
   async getExchangeRate() {
-    this.fiatList = await this._currentPriceService.getCurrentPriceInExchange();
-    this.transactionExtended.exchangeRate = this.fiatList[this.ticker];
+    const currency = await this._currentPriceService.getCurrentPriceInExchange(this.ticker);
+    this.transactionExtended.exchangeRate = currency.smartcash[this.ticker];
     this.recalculateAmountWithFee();
   }
 
@@ -272,13 +272,13 @@ export class SendComponent implements OnInit {
       return { name: k, value: currencies[k] };
     });
     currencies = _.orderBy(currencies, "name", "asc");
-    currencies.unshift({ name: "SMART", value: 1.0 });
+    currencies.unshift({ name: "SMART", value: "SMART" });
 
     return currencies;
   }
 
   async ngOnInit() {
-    this.fiatList = await this._currentPriceService.getCurrentPriceInExchange();
+    this.fiatList = await this._currentPriceService.getListCurrencies();
 
     if (
       !_.isUndefined(this._shared.sendTo) &&

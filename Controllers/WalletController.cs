@@ -115,13 +115,13 @@ namespace webwallet.Controllers
     }
 
     [HttpGet("[action]")]
-    public async Task<dynamic> GetCurrentPrice()
+    public async Task<dynamic> GetCurrentPrice(string currencies = "usd,btc")
     {
       try
       {
         using (var httpClient = new HttpClient())
         {
-          var response = await httpClient.GetAsync("https://api.coingecko.com/api/v3/simple/price?ids=smartcash&vs_currencies=usd,btc");
+          var response = await httpClient.GetAsync(this._config["CoinGeckoApi"] + "/simple/price?ids=smartcash&vs_currencies=" + currencies);
 
           return JsonConvert.DeserializeObject<dynamic>(await response.Content.ReadAsStringAsync());
         }
@@ -133,13 +133,13 @@ namespace webwallet.Controllers
     }
 
     [HttpGet("[action]")]
-    public async Task<dynamic> GetCurrentPriceWithCoin(string coin)
+    public async Task<dynamic> GetCurrentList(string coin)
     {
       try
       {
         using (var httpClient = new HttpClient())
         {
-          var response = await httpClient.GetAsync("https://api.coingecko.com/api/v3/simple/supported_vs_currencies");
+          var response = await httpClient.GetAsync(this._config["CoinGeckoApi"] + "/simple/supported_vs_currencies");
           return JsonConvert.DeserializeObject<dynamic>(await response.Content.ReadAsStringAsync());
 
           //var priceJson = await response.Content.ReadAsStringAsync();
