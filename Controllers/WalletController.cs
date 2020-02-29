@@ -146,11 +146,11 @@ namespace webwallet.Controllers
     }
 
     [HttpGet("[action]")]
-    public async Task<dynamic> GetCurrentList(string coin)
+    public async Task<dynamic> GetCurrentList()
     {
       try
       {
-        string nameCache = string.Format("_GetCurrentList_{0}", coin.Replace("_", "_"));
+        string nameCache = "_GetCurrentList_{0}";
         string retornoCache;
 
         if (!_cache.TryGetValue(nameCache, out retornoCache))
