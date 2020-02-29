@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
@@ -15,6 +16,7 @@ namespace webwallet.Controllers
   public partial class WalletController : Controller
   {
     private readonly IConfiguration _config;
+    private IMemoryCache _cache;
 
     public WalletController(IConfiguration configuration)
     {
@@ -119,12 +121,22 @@ namespace webwallet.Controllers
     {
       try
       {
-        using (var httpClient = new HttpClient())
-        {
-          var response = await httpClient.GetAsync(this._config["CoinGeckoApi"] + "/simple/price?ids=smartcash&vs_currencies=" + currencies);
+        string nameCache = string.Format("_CurrentPrice_{0}", currencies.Replace("_", "_"));
+        string retornoCache;
 
-          return JsonConvert.DeserializeObject<dynamic>(await response.Content.ReadAsStringAsync());
+        if (!_cache.TryGetValue(nameCache, out retornoCache))
+        {
+          using (var httpClient = new HttpClient())
+          {
+            var response = await httpClient.GetAsync(this._config["CoinGeckoApi"] + "/simple/price?ids=smartcash&vs_currencies=" + currencies);
+
+            retornoCache = await response.Content.ReadAsStringAsync();
+          }
+
+          _cache.Set(nameCache, retornoCache, new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromMinutes(5)));
         }
+
+        return JsonConvert.DeserializeObject<dynamic>(retornoCache);
       }
       catch (Exception ex)
       {
@@ -137,15 +149,21 @@ namespace webwallet.Controllers
     {
       try
       {
-        using (var httpClient = new HttpClient())
-        {
-          var response = await httpClient.GetAsync(this._config["CoinGeckoApi"] + "/simple/supported_vs_currencies");
-          return JsonConvert.DeserializeObject<dynamic>(await response.Content.ReadAsStringAsync());
+        string nameCache = string.Format("_GetCurrentList_{0}", coin.Replace("_", "_"));
+        string retornoCache;
 
-          //var priceJson = await response.Content.ReadAsStringAsync();
-          //var json = JObject.Parse(priceJson.Replace("[", "").Replace("]", ""));
-          //return json["items"]["currencies"];
+        if (!_cache.TryGetValue(nameCache, out retornoCache))
+        {
+          using (var httpClient = new HttpClient())
+          {
+            var response = await httpClient.GetAsync(this._config["CoinGeckoApi"] + "/simple/supported_vs_currencies");
+            retornoCache = await response.Content.ReadAsStringAsync();
+          }
+
+          _cache.Set(nameCache, retornoCache, new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromMinutes(5)));
         }
+
+        return JsonConvert.DeserializeObject<dynamic>(retornoCache);
       }
       catch (Exception ex)
       {
