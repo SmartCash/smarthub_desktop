@@ -18,9 +18,10 @@ namespace webwallet.Controllers
     private readonly IConfiguration _config;
     private IMemoryCache _cache;
 
-    public WalletController(IConfiguration configuration)
+    public WalletController(IConfiguration configuration, IMemoryCache cache)
     {
       this._config = configuration;
+      this._cache = cache;
     }
 
     [HttpPost("[action]")]
