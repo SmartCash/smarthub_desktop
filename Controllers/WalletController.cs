@@ -384,7 +384,7 @@ namespace webwallet.Controllers
             {
                 using (var httpClient = new HttpClient())
                 {
-                    var response = await httpClient.GetAsync(this._config["ExpApiDomain"] + "/api/txs?address=" + address + "&pageNum=" + pageNumber);
+                    var response = await httpClient.GetAsync(this._config["ExpApiDomain"] + "/api/txs?limit=5&address=" + address + "&pageNum=" + pageNumber);
                     return JsonConvert.DeserializeObject<dynamic>(await response.Content.ReadAsStringAsync());
                 }
             }
