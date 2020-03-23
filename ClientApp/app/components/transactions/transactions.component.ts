@@ -99,25 +99,6 @@ export class TransactionsComponent implements OnInit, OnDestroy {
       : "Received";
   }
 
-  amount(transaction: any) {
-    const vin = transaction.vin.find(
-      (vin: any) => vin.addr === this.currentWallet.address
-    );
-
-    if (vin) {
-      return vin.value;
-    }
-
-    const vout = transaction.vout.find(
-      (vout: any) =>
-        vout.scriptPubKey.addresses &&
-        vout.scriptPubKey.addresses.length &&
-        this.currentWallet.address.includes(this.currentWallet.address)
-    );
-
-    return vout.value;
-  }
-
   toggleViewer(event: any) {
     event.target.classList.toggle("active");
     event.target.parentNode.nextElementSibling.classList.toggle("active");
