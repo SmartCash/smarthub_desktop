@@ -1,6 +1,5 @@
-import { ActivatedRoute } from "@angular/router";
 import { CurrentPriceService } from "../../services/current-price.service";
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, OnDestroy } from "@angular/core";
 import { Util } from "../../models/util";
 import { SharedService } from "../../services/shared-service.service";
 import { Wallet } from "../../models/data/walletv2.data.model";
@@ -11,86 +10,93 @@ import { SpinnerService } from "../../services/spinner.service";
   selector: "transactions",
   templateUrl: "./transactions.component.html"
 })
-export class TransactionsComponent implements OnInit {
-
+export class TransactionsComponent implements OnInit, OnDestroy {
   currentPrice: any;
   walletIndex: number = 0;
   _listFilter: string = "";
   currentWallet: Wallet;
   showWallets: boolean = false;
   filterScheduled: string = "Transactions";
-
-  filters: string[] = [
-    "All Transactions",
-    "Received",
-    "Awaiting",
-    "Paid"
-  ];
-
+  filters: string[] = ["All Transactions", "Received", "Awaiting", "Paid"];
   filterType: string = this.filters[0];
   _transactions: any;
+  transactionsTimer: any;
 
   constructor(
     public _currentPriceService: CurrentPriceService,
-    private route: ActivatedRoute,
     public _shared: SharedService,
     public _spinner: SpinnerService
-  ) { }
+  ) {}
+
+  async ngOnInit() {
+    this.currentPrice = await this._currentPriceService.getObservableServerCurrentPrice()!;
+
+    if (!Util.isValidObject(this.currentWallet)) {
+      this.setWallet(this._shared.wallet[0], 0);
+    }
+  }
+
+  ngOnDestroy() {
+    this.clearIntervalTransaction();
+  }
 
   setWallet(wallet: Wallet, index?: number) {
     this.currentWallet = wallet;
     this.walletIndex = index || 0;
     this.showWallets = false;
     this._transactions = [];
-    this.getTransactionsFromAddress(wallet.address);
+    this.getTransactionsFromAddress();
   }
 
-  async ngOnInit() {
-    this.currentPrice = await this._currentPriceService.getObservableServerCurrentPrice()!;
-
-    if (!Util.isValidObject(this.currentWallet)) {
-      this.currentWallet = _.first(this._shared.wallet)!;
-      this.walletIndex = 0;
-      this.getTransactionsFromAddress(this.currentWallet.address);
-    }
-
-    this.walletIndex = 0;
+  clearIntervalTransaction() {
+    clearInterval(this.transactionsTimer);
   }
 
-  async getTransactionsFromAddress(address: string, pageNumber = 0) {
-    this._spinner.showSpinner();
-    this._transactions = await this._shared.get(`api/wallet/txs/${address}/${pageNumber}`);
-    this._spinner.hideSpinner();
+  getTransactionsFromAddress(pageNumber = 0) {
+    const getTransaction = async () => {
+      try {
+        this._spinner.showSpinner();
+        this._transactions = await this._shared.get(
+          `api/wallet/txs/${this.currentWallet.address}/${pageNumber}`
+        );
+        this._shared.updateWalletBalance();
+      } catch (e) {
+
+      } finally {
+        this._spinner.hideSpinner();
+      }
+    };
+    getTransaction();
+    this.clearIntervalTransaction();
+    this.transactionsTimer = setInterval(getTransaction, 20000);
   }
 
   getTransactions() {
     switch (this.filterType) {
       case "Received":
-        return this._transactions.txs.filter((txs: any) => !txs.vin.find((vin: any) => vin.addr === this.currentWallet.address));
+        return this._transactions.txs.filter(
+          (txs: any) =>
+            !txs.vin.find((vin: any) => vin.addr === this.currentWallet.address)
+        );
       case "Awaiting":
-        return this._transactions.txs.filter((txs: any) => txs.confirmations === 0);
+        return this._transactions.txs.filter(
+          (txs: any) => txs.confirmations === 0
+        );
       case "Paid":
-        return this._transactions.txs.filter((txs: any) => txs.vin.find((vin: any) => vin.addr === this.currentWallet.address));
+        return this._transactions.txs.filter((txs: any) =>
+          txs.vin.find((vin: any) => vin.addr === this.currentWallet.address)
+        );
       default:
         return this._transactions.txs;
     }
-
   }
 
   direction(transaction: any) {
-    return transaction.vin.find((vin: any) => vin.addr === this.currentWallet.address) ? 'Sent' : 'Received';
-  }
-
-  amount(transaction: any) {
-    const vin = transaction.vin.find((vin: any) => vin.addr === this.currentWallet.address);
-
-    if (vin) {
-      return vin.value;
-    }
-
-    const vout = transaction.vout.find((vout: any) => vout.scriptPubKey.addresses && vout.scriptPubKey.addresses.length && this.currentWallet.address.includes(this.currentWallet.address));
-
-    return vout.value;
+    return transaction.vin.find(
+      (vin: any) => vin.addr === this.currentWallet.address
+    )
+      ? "Sent"
+      : "Received";
   }
 
   toggleViewer(event: any) {
@@ -106,7 +112,10 @@ export class TransactionsComponent implements OnInit {
     let sent = 0.0;
     for (let i = 0; i < outputs.length; i++) {
       let output = outputs[i];
-      if (output.scriptPubKey.addresses && !output.scriptPubKey.addresses.includes(this.currentWallet.address)) {
+      if (
+        output.scriptPubKey.addresses &&
+        !output.scriptPubKey.addresses.includes(this.currentWallet.address)
+      ) {
         sent += parseFloat(output.value);
       }
     }
@@ -117,7 +126,10 @@ export class TransactionsComponent implements OnInit {
     let received = 0.0;
     for (let i = 0; i < outputs.length; i++) {
       let output = outputs[i];
-      if (output.scriptPubKey.addresses && output.scriptPubKey.addresses.includes(this.currentWallet.address)) {
+      if (
+        output.scriptPubKey.addresses &&
+        output.scriptPubKey.addresses.includes(this.currentWallet.address)
+      ) {
         received += parseFloat(output.value);
       }
     }

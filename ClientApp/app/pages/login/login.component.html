@@ -1,0 +1,194 @@
+<div class="page-login">
+  <form
+    (ngSubmit)="login()"
+    #registerForm="ngForm"
+    autocomplete="off"
+    *ngIf="!this._shared.isAuthenticated"
+  >
+    <img class="mobile-logo" src="/img/weblogo.png" alt="logo smartcash" />
+    <div class="modal absolute-center" [ngClass]="{ modalError: ErrorMessage }">
+      <div class="login-disclaimer"></div>
+      <div class="login-form">
+        <div class="login-form-menu">
+          <a [routerLink]="['/login']" routerLinkActive="active">
+            <i class="icon-person"></i>
+            <span>{{ "Login" | translate }}</span>
+          </a>
+          <a [routerLink]="['/register']" routerLinkActive="active">
+            <i class="icon-subscription"></i>
+            <span>{{ "Sign up" | translate }}</span>
+          </a>
+        </div>
+        <div class="login-form-inputs">
+          <div
+            class="form-input"
+            [ngClass]="{ error: username.valid || username.pristine }"
+          >
+            <label for="userName"
+              >{{ "User Name" | translate }}: <sup class="required">*</sup>
+              <span
+                [hidden]="username.valid || username.pristine"
+                class="alert alert-danger"
+                >{{ "The User Name is required" | translate }}</span
+              ></label
+            >
+            <input
+              id="username"
+              type="text"
+              value=""
+              [(ngModel)]="userInfo.username"
+              required
+              name="username"
+              #username="ngModel"
+              pattern="^[a-zA-Z][a-zA-Z0-9-_\.]{1,20}$"
+              autocomplete="off"
+            />
+          </div>
+          <div class="form-input">
+            <label for="password"
+              >{{ "Password" | translate }}: <sup class="required">*</sup>
+              <span
+                [hidden]="password.valid || password.pristine"
+                class="alert alert-danger"
+                >{{ "The Password is required" | translate }}</span
+              ></label
+            >
+            <input
+              id="password"
+              [type]="inputTypePassword"
+              value=""
+              [(ngModel)]="userInfo.password"
+              name="password"
+              required
+              #password="ngModel"
+              autocomplete="off"
+            />
+            <button
+              type="button"
+              data-toggle="modal"
+              data-target="#modalQrCode"
+              id="btnQrCode"
+              (click)="startQR()"
+              *ngIf="hasQrCode"
+            >
+              <i class="icon-select-all"></i>
+            </button>
+            <button
+              type="button"
+              (click)="showPassword()"
+              *ngIf="inputTypePassword == 'password'"
+              title="Show Password"
+            >
+              <i class="icon-eye"></i>
+            </button>
+            <button
+              type="button"
+              (click)="showPassword()"
+              *ngIf="inputTypePassword == 'text'"
+              title="Hide Password "
+            >
+              <i class="icon-eye"></i>
+            </button>
+          </div>
+          <div class="form-input last">
+            <label for="twoFactorAuthentication">{{
+              "Two Factor Authentication Code: (Optional)" | translate
+            }}</label>
+            <input
+              id="twoFactorAuthentication"
+              type="text"
+              value=""
+              [(ngModel)]="userInfo.twoFactorAuthentication"
+              name="twoFactorAuthentication"
+              #twoFactorAuthentication="ngModel"
+              autocomplete="off"
+            />
+          </div>
+        </div>
+        <div class="gauth-pwa clearfix">
+          <div class="gauth">
+            <re-captcha
+              *ngIf="_env.showCaptcha"
+              (resolved)="resolved($event)"
+              [siteKey]="recaptchaKey"
+              required
+              [(ngModel)]="formModel.captcha"
+              name="captcha"
+              #captcha="ngModel"
+            ></re-captcha>
+          </div>
+        </div>
+        <div
+          *ngIf="ErrorMessage"
+          class="alert-box alert-danger"
+          role="alert"
+          style="margin: 0 30px;"
+        >
+          {{ ErrorMessage }}
+        </div>
+        <div class="login-form-bottom clearfix">
+          <div class="forget-password">
+            <span
+              >{{ "Did you forget your password?" | translate }}
+              <a [routerLink]="['/change-password']">{{
+                "click here" | translate
+              }}</a
+              >.</span
+            >
+            <span
+              >{{ "Do you need to disable 2FA?" | translate }}
+              <a
+                class="twofa-link"
+                [routerLink]="['/disable2fa']"
+                title="Disable 2FA"
+                >{{ "click here" | translate }}</a
+              >.</span
+            >
+          </div>
+          <div class="buttons">
+            <button
+              #btnSubmit
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="!registerForm.form.valid || inProgress"
+            >
+              Login
+            </button>
+            <!-- <button type="submit" class="btn btn-primary" disabled>Login</button> -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<div class="modal fade" id="modalQrCode" role="dialog" style="display:none">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button
+          type="button"
+          class="close"
+          data-dismiss="modal"
+          (click)="stopQR()"
+        >
+          &times;
+        </button>
+        <h4 class="modal-title">Scan your QR CODE</h4>
+      </div>
+      <div class="modal-body">
+        <iframe scrolling="no" id="iQR" src="" class="iframeQR"></iframe>
+      </div>
+      <div class="modal-footer text-right">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          data-dismiss="modal"
+          (click)="stopQR()"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

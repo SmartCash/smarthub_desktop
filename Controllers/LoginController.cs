@@ -46,10 +46,10 @@ namespace webwallet.Controllers
             }
 
             var postData = new List<KeyValuePair<string, string>>();
-            postData.Add(new KeyValuePair<string, string>("client_id", this._config["client_id"]));
-            postData.Add(new KeyValuePair<string, string>("client_secret", this._config["client_secret"]));
-            postData.Add(new KeyValuePair<string, string>("client_type", "webclient"));
-            postData.Add(new KeyValuePair<string, string>("grant_type", "password"));
+            //postData.Add(new KeyValuePair<string, string>("client_id", this._config["client_id"]));
+            //postData.Add(new KeyValuePair<string, string>("client_secret", this._config["client_secret"]));
+            //postData.Add(new KeyValuePair<string, string>("client_type", "webclient"));
+            //postData.Add(new KeyValuePair<string, string>("grant_type", "password"));
             postData.Add(new KeyValuePair<string, string>("username", request.username));
             postData.Add(new KeyValuePair<string, string>("password", request.password));
             postData.Add(new KeyValuePair<string, string>("TwoFactorAuthentication", request.twoFactorAuthentication));
@@ -81,7 +81,7 @@ namespace webwallet.Controllers
             public string access_token { get; set; }
             public string error { get; set; }
             public string error_description { get; set; }
-            public long expires_in { get; set; }
+            public DateTime expires_in { get; set; }
             public string refresh_token { get; set; }
             public string token_type { get; set; }
         }

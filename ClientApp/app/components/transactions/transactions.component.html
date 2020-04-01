@@ -1,65 +1,116 @@
 <div class="wallets currentWallet" *ngIf="currentWallet">
-    <button class="wallet" (click)="showWallets = !showWallets">
-        <div class="icon_address icon_address-{{walletIndex}}" [ngClass]="{'icon_addres--vault': currentWallet.isVault}">
-            <i *ngIf="!currentWallet.isVault" class="icon-account-balance-wallet"></i>
-            <i *ngIf="currentWallet.isVault" class="icon-vault"></i>
-        </div>
-        <span class="balance">Σ {{currentWallet.balance | number:'1.2-8'}}</span>
-        <span class="displayName">{{currentWallet.displayName}}</span>
-        <span class="address">{{currentWallet.address}}</span>
-    </button>
+  <button class="wallet" (click)="showWallets = !showWallets">
+    <div
+      class="icon_address icon_address-{{ walletIndex }}"
+      [ngClass]="{ 'icon_addres--vault': currentWallet.isVault }"
+    >
+      <i *ngIf="!currentWallet.isVault" class="icon-account-balance-wallet"></i>
+      <i *ngIf="currentWallet.isVault" class="icon-vault"></i>
+    </div>
+    <span class="balance">Σ {{ currentWallet.balance | number: "1.2-8" }}</span>
+    <span class="displayName">{{ currentWallet.displayName }}</span>
+    <span class="address">{{ currentWallet.address }}</span>
+  </button>
 </div>
-<div class="wallets" [ngClass]="{'show animated fadeIn': showWallets}" *ngIf="_shared.wallet && currentWallet">
-    <button class="wallet"
-            *ngFor="let w of _shared.wallet; let _index = index"
-            (click)="setWallet(w, _index)"
-            [ngClass]="{'actived': currentWallet.address === w.address}">
-        <div class="icon_address icon_address-{{_index}}" [ngClass]="{'icon_addres--vault': w.isVault}">
-            <i [ngClass]="{'icon-account-balance-wallet': !w.isVault && !w.isScheduled, 'icon-vault': w.isVault, 'icon-calendar': w.isScheduled}"></i>
-        </div>
-        <span class="balance">Σ {{w.balance | number:'1.2-8'}}</span>
-        <span class="displayName">{{w.displayName}}</span>
-        <span class="address">{{w.address}}</span>
-        <i class="icon-bullet-circle-stroke-unchecked ico_normal"></i>
-        <i class="icon-adjust ico_activated"></i>
-    </button>
+<div
+  class="wallets"
+  [ngClass]="{ 'show animated fadeIn': showWallets }"
+  *ngIf="_shared.wallet && currentWallet"
+>
+  <button
+    class="wallet"
+    *ngFor="let w of _shared.wallet; let _index = index"
+    (click)="setWallet(w, _index)"
+    [ngClass]="{ actived: currentWallet.address === w.address }"
+  >
+    <div
+      class="icon_address icon_address-{{ _index }}"
+      [ngClass]="{ 'icon_addres--vault': w.isVault }"
+    >
+      <i
+        [ngClass]="{
+          'icon-account-balance-wallet': !w.isVault && !w.isScheduled,
+          'icon-vault': w.isVault,
+          'icon-calendar': w.isScheduled
+        }"
+      ></i>
+    </div>
+    <span class="balance">Σ {{ w.balance | number: "1.2-8" }}</span>
+    <span class="displayName">{{ w.displayName }}</span>
+    <span class="address">{{ w.address }}</span>
+    <i class="icon-bullet-circle-stroke-unchecked ico_normal"></i>
+    <i class="icon-adjust ico_activated"></i>
+  </button>
 </div>
 <div class="page-wrapper">
-    <div class="filter all-transactions" role="alert">
-        <button *ngFor="let filter of filters" [ngClass]="{'active': filterType === filter}" (click)="filterType = filter">{{filter | translate}}</button>
-    </div>
-    <app-spinner></app-spinner>
-    <div class="transactions" *ngIf="_transactions">
-        <div class="card" *ngFor="let transaction of getTransactions();trackBy: trackByFn">
-            <div class="transaction-header">
-                <div class="status {{direction(transaction)}}" [ngClass]="{'awaiting': transaction.confirmations === 0}">
-                    <span *ngIf="direction(transaction) === 'Received' && transaction.confirmations !== 0">
-                        <i class="icon-price-min"></i>
-                        <span class="type">{{'Received' | translate}}</span>
-                    </span>
-                    <span *ngIf="direction(transaction) === 'Sent' && transaction.confirmations !== 0">
-                        <i class="icon-price-max"></i>
-                        <span class="type">{{'Paid' | translate}}</span>
-                    </span>
-                    <span *ngIf="transaction.confirmations === 0">
-                        <i class="icon-schedule"></i>
-                        <span class="type">{{'Awaiting' | translate}}</span>
-                    </span>
-                </div>
-                <div class="amount">
-                    <span *ngFor="let price of currentPrice">
-                        <strong>Σ {{getAmount(transaction) | number:'1.2-8'}}</strong> ($ {{getAmount(transaction) * price.price_usd | number:'1.2-4'}})
-                    </span>
-                    <div class="timestamp">{{ transaction.timestamp | date:'short'}}</div>
-                </div>
-                <span class="arrow" (click)="toggleViewer($event)"></span>
-            </div>
-            <div class="transaction-body">
-                <span>
-                    <strong>{{'Transaction ID' | translate}}</strong>
-                    <a href="https://insight.smartcash.cc/tx/{{transaction.txid}}" target="_blank">{{transaction.txid}}</a>
-                </span>
-            </div>
+  <div class="filter all-transactions" role="alert">
+    <button (click)="getTransactionsFromAddress()" [disabled]="_spinner.inProgress">
+      <i class="icon-refresh-button" [ngClass]="{'icon-spin': _spinner.inProgress}"></i>
+    </button>
+    <button
+      *ngFor="let filter of filters"
+      [ngClass]="{ active: filterType === filter }"
+      (click)="filterType = filter"
+    >
+      {{ filter | translate }}
+    </button>
+  </div>
+  <app-spinner></app-spinner>
+  <div class="transactions" *ngIf="_transactions">
+    <div
+      class="card"
+      *ngFor="let transaction of getTransactions(); trackBy: trackByFn"
+    >
+      <div class="transaction-header">
+        <div
+          class="status {{ direction(transaction) }}"
+          [ngClass]="{ awaiting: transaction.confirmations === 0 }"
+        >
+          <span
+            *ngIf="
+              direction(transaction) === 'Received' &&
+              transaction.confirmations !== 0
+            "
+          >
+            <i class="icon-price-min"></i>
+            <span class="type">{{ "Received" | translate }}</span>
+          </span>
+          <span
+            *ngIf="
+              direction(transaction) === 'Sent' &&
+              transaction.confirmations !== 0
+            "
+          >
+            <i class="icon-price-max"></i>
+            <span class="type">{{ "Paid" | translate }}</span>
+          </span>
+          <span *ngIf="transaction.confirmations === 0">
+            <i class="icon-schedule"></i>
+            <span class="type">{{ "Awaiting" | translate }}</span>
+          </span>
         </div>
+        <div class="amount">
+          <span *ngFor="let price of currentPrice">
+            <strong>Σ {{ getAmount(transaction) | number: "1.2-8" }}</strong> ($
+            {{ getAmount(transaction) * price.price_usd | number: "1.2-4" }})
+          </span>
+          <div class="timestamp">
+            {{ transaction.timestamp | date: "short" }}
+          </div>
+        </div>
+        <span class="arrow" (click)="toggleViewer($event)"></span>
+      </div>
+      <div class="transaction-body">
+        <span>
+          <strong>{{ "Transaction ID" | translate }}</strong>
+          <a
+            href="https://insight.smartcash.cc/tx/{{ transaction.txid }}"
+            target="_blank"
+            >{{ transaction.txid }}</a
+          >
+        </span>
+      </div>
     </div>
+    <div class="card text-center">To see all transactions, please <a target="_blank" href="https://insight.smartcash.cc/address/{{ currentWallet.address }}">click here</a></div>
+  </div>
 </div>

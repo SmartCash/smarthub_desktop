@@ -60,10 +60,8 @@ export class ProfileComponent implements OnInit {
                 if (!this.createResponse.isValid) {
                     return;
                 }
-                let param = this._route.snapshot.queryParams['returnUrl'];
-                if (param == '/home' || param == 'home') param = '/overview'
-                let returnUrl = param || '/overview';
-                this._router.navigate([returnUrl]);
+                this._shared.logout();
+                this._router.navigate(['/login']);
             }, 2000);
         }
         catch (e) {

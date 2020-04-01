@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
@@ -15,10 +16,12 @@ namespace webwallet.Controllers
     public partial class WalletController : Controller
     {
         private readonly IConfiguration _config;
+        private IMemoryCache _cache;
 
-        public WalletController(IConfiguration configuration)
+        public WalletController(IConfiguration configuration, IMemoryCache cache)
         {
             this._config = configuration;
+            this._cache = cache;
         }
 
         [HttpPost("[action]")]
@@ -115,15 +118,28 @@ namespace webwallet.Controllers
         }
 
         [HttpGet("[action]")]
-        public async Task<dynamic> GetCurrentPrice()
+        public async Task<dynamic> GetCurrentPrice(string currencies = "usd,btc")
         {
             try
             {
-                using (var httpClient = new HttpClient())
+                string nameCache = string.Format("_CurrentPrice_{0}", currencies.Replace("_", "_"));
+                string retornoCache;
+
+                if (!_cache.TryGetValue(nameCache, out retornoCache))
                 {
-                    var response = await httpClient.GetAsync(this._config["ApiDomain"] + "/v1d/exchange/currencies?currencies=usd,btc");
-                    return JsonConvert.DeserializeObject<dynamic>(await response.Content.ReadAsStringAsync());
+                    using (var httpClient = new HttpClient())
+                    {
+                        var response = await httpClient.GetAsync(this._config["CoinGeckoApi"] + "/simple/price?ids=smartcash&vs_currencies=" + currencies);
+
+                        retornoCache = await response.Content.ReadAsStringAsync();
+                    }
+
+                    int expirationTime = 60;
+                    int.TryParse(this._config["CoinGeckoApi_cache_expiration"].ToString(), out expirationTime);
+                    _cache.Set(nameCache, retornoCache, new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromMinutes(expirationTime)));
                 }
+
+                return JsonConvert.DeserializeObject<dynamic>(retornoCache);
             }
             catch (Exception ex)
             {
@@ -132,17 +148,25 @@ namespace webwallet.Controllers
         }
 
         [HttpGet("[action]")]
-        public async Task<dynamic> GetCurrentPriceWithCoin(string coin)
+        public async Task<dynamic> GetCurrentList()
         {
             try
             {
-                using (var httpClient = new HttpClient())
+                string nameCache = "_GetCurrentList_{0}";
+                string retornoCache;
+
+                if (!_cache.TryGetValue(nameCache, out retornoCache))
                 {
-                    var response = await httpClient.GetAsync(this._config["ApiDomain"] + "/v1/exchange/currencies?limit=1");
-                    var priceJson = await response.Content.ReadAsStringAsync();
-                    var json = JObject.Parse(priceJson.Replace("[", "").Replace("]", ""));
-                    return json["items"]["currencies"];
+                    using (var httpClient = new HttpClient())
+                    {
+                        var response = await httpClient.GetAsync(this._config["CoinGeckoApi"] + "/simple/supported_vs_currencies");
+                        retornoCache = await response.Content.ReadAsStringAsync();
+                    }
+
+                    _cache.Set(nameCache, retornoCache, new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromMinutes(5)));
                 }
+
+                return JsonConvert.DeserializeObject<dynamic>(retornoCache);
             }
             catch (Exception ex)
             {
@@ -193,6 +217,34 @@ namespace webwallet.Controllers
                     content.Headers.Clear();
                     content.Headers.Add("Content-Type", "application/json");
                     var response = await httpClient.PostAsync(this._config["SAPIDomain"] + "/v1/address/unspent/amount", content);
+                    dynamic token = JsonConvert.DeserializeObject<dynamic>(await response.Content.ReadAsStringAsync());
+                    return token;
+                }
+            }
+        }
+
+        [HttpPost("[action]")]
+        public async Task<dynamic> SendPayment([FromBody] dynamic request)
+        {
+            if (request == null)
+            {
+                throw new ArgumentNullException(nameof(request));
+            }
+
+            using (var httpClient = new HttpClient())
+            {
+                StringValues auth;
+                this.Request.Headers.TryGetValue("Authorization", out auth);
+                var authHeader = auth.FirstOrDefault();
+                if (!string.IsNullOrEmpty(authHeader))
+                    authHeader = authHeader.Replace("Bearer ", "");
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth.FirstOrDefault().Replace("Bearer ", ""));
+
+                using (var content = new StringContent(JsonConvert.SerializeObject(request), System.Text.Encoding.UTF8, "application/json"))
+                {
+                    content.Headers.Clear();
+                    content.Headers.Add("Content-Type", "application/json");
+                    var response = await httpClient.PostAsync(this._config["AppApiDomain"] + "/api/wallet/sendpayment", content);
                     dynamic token = JsonConvert.DeserializeObject<dynamic>(await response.Content.ReadAsStringAsync());
                     return token;
                 }
@@ -332,7 +384,7 @@ namespace webwallet.Controllers
             {
                 using (var httpClient = new HttpClient())
                 {
-                    var response = await httpClient.GetAsync(this._config["ExpApiDomain"] + "/api/txs?address="+address+"&pageNum="+pageNumber);
+                    var response = await httpClient.GetAsync(this._config["ExpApiDomain"] + "/api/txs?limit=5&address=" + address + "&pageNum=" + pageNumber);
                     return JsonConvert.DeserializeObject<dynamic>(await response.Content.ReadAsStringAsync());
                 }
             }

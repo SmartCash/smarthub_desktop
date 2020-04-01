@@ -33,13 +33,13 @@ export class ReceiveComponent implements OnInit {
         let currencies = this.fiatList;
         currencies = Object.keys(currencies).map(function (k: any) { return { name: k, value: currencies[k] } })
         currencies = _.orderBy(currencies, 'name', 'asc');
-        currencies.unshift({ name: 'SMART', value: 1.0 });
+        currencies.unshift({ name: 'SMART', value: 'SMART' });
 
         return currencies;
     }
 
     async ngOnInit() {
-        this.fiatList = await this._currentPriceService.getCurrentPriceInExchange();
+        this.fiatList = await this._currentPriceService.getListCurrencies();
         if (!Util.isValidObject(this.currentWallet))
             this.currentWallet = _.first(this._shared.wallet)!;
     }
@@ -69,9 +69,9 @@ export class ReceiveComponent implements OnInit {
         this.sendQrCode.amountWithConversion = Number(amountWithConversion.toFixed(8));
     }
 
-    async getExchangeRate(coin: any) {
-        this.fiatList = await this._currentPriceService.getCurrentPriceInExchange();
-        this.sendQrCode.exchangeRate = this.fiatList[this.ticker];
+    async getExchangeRate() {
+        const currency = await this._currentPriceService.getCurrentPriceInExchange(this.ticker);
+        this.sendQrCode.exchangeRate = currency.smartcash[this.ticker];
         this.recalculateAmountWithFee();
     }
 
@@ -82,7 +82,7 @@ export class ReceiveComponent implements OnInit {
             this.sendQrCode.exchangeRate = 1.0;
             this.recalculateAmountWithFee();
         } else {
-            await this.getExchangeRate(coin);
+            await this.getExchangeRate();
         }
     }
 }

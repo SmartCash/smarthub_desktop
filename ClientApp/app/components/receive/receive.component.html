@@ -2,75 +2,105 @@
 <nav-menu></nav-menu>
 <nav-bottom></nav-bottom>
 <div class="page page-receive">
-    <div class="wallets currentWallet">
-        <button class="wallet" (click)="showWallets = !showWallets">
-            <div class="icon_address icon_address-{{currentWalletIndex}}">
-                <i class="icon-account-balance-wallet"></i>
-            </div>
-            <span class="balance">Σ {{currentWallet?.balance | number:'1.2-4'}}</span>
-            <span class="displayName">{{currentWallet?.displayName}}</span>
-            <span class="address">{{currentWallet?.address}}</span>
-        </button>
-    </div>
-    <div class="wallets" [ngClass]="{'show animated fadeIn': showWallets}">
-        <button class="wallet" *ngFor="let w of getWallets(); let _index = index" (click)="setWallet(w)" [ngClass]="{'actived': currentWallet?.address === w?.address}">
-            <div class="icon_address icon_address-{{_index}}">
-                <i class="icon-account-balance-wallet"></i>
-            </div>
-            <span class="balance">Σ {{w?.balance | number:'1.2-4'}}</span>
-            <span class="displayName">{{w?.displayName}}</span>
-            <span class="address">{{w?.address}}</span>
-            <i class="icon-bullet-circle-stroke-unchecked ico_normal"></i>
-            <i class="icon-adjust ico_activated"></i>
-        </button>
-    </div>
-    <div class="page-wrapper">
-        <div class="card card-1 walletInfo" *ngIf="currentWallet?.address">
-            <span class="displayName">{{'Use the address below to receive SMART.' | translate}}</span>
-            <qrcode [data]="getQrCodeUrl()"></qrcode>
-            <div class="walletInfoWrapper">
-                <div>
+  <div class="wallets currentWallet">
+    <button class="wallet" (click)="showWallets = !showWallets">
+      <div class="icon_address icon_address-{{ currentWalletIndex }}">
+        <i class="icon-account-balance-wallet"></i>
+      </div>
+      <span class="balance"
+        >Σ {{ currentWallet?.balance | number: "1.2-4" }}</span
+      >
+      <span class="displayName">{{ currentWallet?.displayName }}</span>
+      <span class="address">{{ currentWallet?.address }}</span>
+    </button>
+  </div>
+  <div class="wallets" [ngClass]="{ 'show animated fadeIn': showWallets }">
+    <button
+      class="wallet"
+      *ngFor="let w of getWallets(); let _index = index"
+      (click)="setWallet(w)"
+      [ngClass]="{ actived: currentWallet?.address === w?.address }"
+    >
+      <div class="icon_address icon_address-{{ _index }}">
+        <i class="icon-account-balance-wallet"></i>
+      </div>
+      <span class="balance">Σ {{ w?.balance | number: "1.2-4" }}</span>
+      <span class="displayName">{{ w?.displayName }}</span>
+      <span class="address">{{ w?.address }}</span>
+      <i class="icon-bullet-circle-stroke-unchecked ico_normal"></i>
+      <i class="icon-adjust ico_activated"></i>
+    </button>
+  </div>
+  <div class="page-wrapper">
+    <div class="card card-1 walletInfo" *ngIf="currentWallet?.address">
+      <span class="displayName">{{
+        "Use the address below to receive SMART." | translate
+      }}</span>
+      <qrcode [data]="getQrCodeUrl()"></qrcode>
+      <div class="walletInfoWrapper">
+        <div>
+          <div class="form-input input-currency">
+            <label for="amount"> {{ "Currency" | translate }}: </label>
+            <select (change)="returnConversionRate($event.target.value)">
+              <option
+                *ngFor="
+                  let fiat of getFiatList();
+                  let i = index;
+                  trackBy: trackByFn
+                "
+                [value]="fiat.value"
+                [selected]="ticker == fiat.value"
+                >{{ fiat.value }}</option
+              >
+            </select>
+          </div>
 
-                    <div class="form-input input-currency">
-                        <label for="amount">
-                            {{'Currency' | translate}}:
-                        </label>
-                        <select (change)="returnConversionRate($event.target.value)">
-                            <option *ngFor="let fiat of getFiatList();let i = index; trackBy: trackByFn" [value]="fiat.name" [selected]="ticker == fiat.name">{{fiat.name}}</option>
-                        </select>
-                    </div>
+          <div class="form-input input-amount">
+            <label for="amountSendPayment">
+              {{ "Amount" | translate }} in {{ ticker }}:
+            </label>
+            <input
+              id="amountSendPayment"
+              type="text"
+              [(ngModel)]="sendQrCode.amount"
+              name="amount"
+              #amount="ngModel"
+              required
+              autocomplete="off"
+              (ngModelChange)="recalculateAmountWithFee($event)"
+              mask="0*.00000000"
+              [dropSpecialCharacters]="false"
+            />
+          </div>
 
-                    <div class="form-input input-amount">
-                        <label for="amountSendPayment">
-                            {{'Amount' | translate}} in {{ticker}}:
-                        </label>
-                        <input id="amountSendPayment"
-                               type="text"
-                               [(ngModel)]="sendQrCode.amount"
-                               name="amount"
-                               #amount="ngModel"
-                               required
-                               autocomplete="off"
-                               (ngModelChange)="recalculateAmountWithFee($event)"
-                               mask='0*.00000000'
-                               [dropSpecialCharacters]="false" />
-                    </div>
-
-                    <div class="form-input input-amoutWithFee">
-                        <label for="amountWithFee">
-                            {{'Amount' | translate}} in SMART:
-                        </label>
-                        <input id="amountWithFee" type="text" [(ngModel)]="sendQrCode.amountWithConversion" name="amountWithFee" #amount="ngModel" required autocomplete="off" disabled />
-                    </div>
-                </div>
-                <div class="clearfix"> </div>
-                <div>
-                    <span class="address">{{currentWallet.address}}</span>
-                    <button class="btn" type="button" [attr.data-clipboard-text]="currentWallet.address">
-                        <i class="icon-content-copy"></i>
-                    </button>
-                </div>
-            </div>
+          <div class="form-input input-amoutWithFee">
+            <label for="amountWithFee">
+              {{ "Amount" | translate }} in SMART:
+            </label>
+            <input
+              id="amountWithFee"
+              type="text"
+              [(ngModel)]="sendQrCode.amountWithConversion"
+              name="amountWithFee"
+              #amount="ngModel"
+              required
+              autocomplete="off"
+              disabled
+            />
+          </div>
         </div>
+        <div class="clearfix"></div>
+        <div>
+          <span class="address">{{ currentWallet.address }}</span>
+          <button
+            class="btn"
+            type="button"
+            [attr.data-clipboard-text]="currentWallet.address"
+          >
+            <i class="icon-content-copy"></i>
+          </button>
+        </div>
+      </div>
     </div>
+  </div>
 </div>

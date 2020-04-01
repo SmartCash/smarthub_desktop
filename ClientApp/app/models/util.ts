@@ -1,9 +1,8 @@
-import * as Jquery from 'jquery';
+import { ElementRef, Injectable } from '@angular/core';
 import * as store from 'store';
 
+@Injectable()
 export class Util {
-    constructor() { }
-
     public static isValidObject(obj: any) {
         return (obj !== undefined && typeof obj !== 'undefined' && obj !== null && obj !== {} && Object.keys(obj).length > 0);
     }
@@ -30,5 +29,20 @@ export class Util {
     }
     public static trackByFn(index: any, item: any) {
         return item.value;
+    }
+    public static setButtonAsWaitState(button: ElementRef) {
+        if (button.nativeElement !== null) {
+            const htmlElement = button.nativeElement as HTMLElement;
+            htmlElement.setAttribute('disabled', 'disabled');
+            htmlElement.setAttribute('data-value', htmlElement.innerHTML);
+            htmlElement.innerHTML = '<i class="icon-spinner icon-spin"></i>';
+        }
+    }
+    public static setButtonAsReadyState(button: ElementRef) {
+        if (button && button.nativeElement !== null) {
+            const htmlElement = button.nativeElement as HTMLElement;
+            htmlElement.innerHTML = htmlElement.getAttribute('data-value') as string;
+            htmlElement.removeAttribute('disabled');
+        }
     }
 }

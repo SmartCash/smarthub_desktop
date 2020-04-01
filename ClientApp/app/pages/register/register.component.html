@@ -1,247 +1,517 @@
 <div class="page-register">
-    <img class="mobile-logo" src="/img/weblogo.png" alt="logo smartcash">
-    <div class="modal absolute-center">
-        <div class="login-disclaimer"></div>
-        <div class="login-form">
-            <div class="login-form-menu">
-                <a [routerLink]="['/login']" routerLinkActive="active">
-                    <i class="icon-person"></i>
-                    <span>{{'Login' | translate}}</span>
-                </a>
-                <a [routerLink]="['/register']" routerLinkActive="active">
-                    <i class="icon-subscription"></i>
-                    <span>{{'Sign up' | translate}}</span>
-                </a>
+  <img class="mobile-logo" src="/img/weblogo.png" alt="logo smartcash" />
+  <div class="modal absolute-center">
+    <div class="login-disclaimer"></div>
+    <div class="login-form">
+      <div class="login-form-menu">
+        <a [routerLink]="['/login']" routerLinkActive="active">
+          <i class="icon-person"></i>
+          <span>{{ "Login" | translate }}</span>
+        </a>
+        <a [routerLink]="['/register']" routerLinkActive="active">
+          <i class="icon-subscription"></i>
+          <span>{{ "Sign up" | translate }}</span>
+        </a>
+      </div>
+
+      <form (ngSubmit)="securityCodeConfirm()" *ngIf="!inProgress">
+        <div class="modal-body">
+          <h2 class="body__title">Master Security Code</h2>
+          <p class="body__subtitle">
+            {{
+              "The Master Security Code is required to access your private keys and features of web wallet, once lost it cannot be recovered, keep it safe."
+                | translate
+            }}
+          </p>
+          <ng-container *ngIf="!_shared.recoveryKey.recoveryKey">
+            <button
+              #btnSubmit
+              type="button"
+              (click)="generateMSK()"
+              class="generator__button"
+            >
+              Generate my Master Security Code
+            </button>
+            <app-spinner></app-spinner>
+          </ng-container>
+          <ng-container *ngIf="_shared.recoveryKey.recoveryKey">
+            <div class="secutiry-code">
+              <div class="wrapper">
+                <span class="title">
+                  {{ "This is your Master Security Code" | translate }}
+                </span>
+                <p
+                  class="recoveryKey"
+                  oncut="return false"
+                  onpaste="return false"
+                >
+                  {{ _shared.recoveryKey.recoveryKey }}
+                </p>
+                <p>
+                  {{
+                    "For security reasons, we strongly recommend you save this Master Security Code file to a secure external storage device, instead of your computer hard drive."
+                      | translate
+                  }}
+                </p>
+              </div>
+              <button
+                type="button"
+                class="btn copy2"
+                [attr.data-clipboard-text]="_shared.recoveryKey.recoveryKey"
+              >
+                <i class="icon-content-copy"></i>
+              </button>
             </div>
-
-            <form (ngSubmit)="securityCodeConfirm()" *ngIf="!inProgress">
-                <div class="modal-body">
-                    <h2 class="body__title">Master Security Code</h2>
-                    <p class="body__subtitle">
-                        {{'The Master Security Code is required to access your private keys and features of web wallet, once lost it cannot be recovered, keep it safe.' | translate}}
-                    </p>
-                    <ng-container *ngIf="!_shared.recoveryKey.recoveryKey">
-                        <button type="button" (click)="generateMSK()" class="generator__button">
-                            Generate my Master Security Code
-                        </button>
-                        <app-spinner></app-spinner>
-                    </ng-container>
-                    <ng-container *ngIf="_shared.recoveryKey.recoveryKey"> 
-                        <div class="secutiry-code">
-                            <div class="wrapper">
-                                <span class="title">
-                                    {{'This is your Master Security Code' | translate}}
-                                </span>
-                                <p class="recoveryKey" oncut="return false" onpaste="return false">{{ _shared.recoveryKey.recoveryKey }}</p>
-                                <p>{{'For security reasons, we strongly recommend you save this Master Security Code file to a secure external storage device, instead of your computer hard drive.' | translate}}</p>
-                            </div>
-                            <button type="button" class="btn copy2" [attr.data-clipboard-text]="_shared.recoveryKey.recoveryKey">
-                                <i class="icon-content-copy"></i>
-                            </button>
-                        </div>
-                        <div class="form-input form-input-key_comfirmation">
-                            <label>
-                                {{'Enter your Master Security Code below to confirm you have saved it' | translate}} <span class="required">*</span>
-                                <span [hidden]="key_confirmation.valid || key_confirmation.pristine"
-                                    class="alert alert-danger">{{'The Master Security Code Confirmation is required' | translate}}</span>
-                                <span [hidden]="isRecoveryKeyEqual"
-                                    class="alert alert-danger">{{'The recoveryKey does not match.' | translate}}</span>
-                            </label>
-                            <input type="text" value="" [(ngModel)]="userInfoExtended.key_confirmation" name="key_confirmation" required #key_confirmation="ngModel"
-                                (change)="confirmKey()" placeholder="{{'Paste your Master Security Code here to confirm' | translate}}" />
-                        </div>
-                    </ng-container>
-                </div>
-                <div class="modal-footer reverse">
-                    <button class="btn btn-primary" [disabled]="!codeConfirmKey" type="submit">{{"Next" | translate}}</button>
-                </div>
-            </form>
-            <form (ngSubmit)="onSubmit()" #registerForm="ngForm" autocomplete="off" *ngIf="inProgress">
-                <div class="modal-body">
-                    <div class="alert-box alert-warning" role="alert">
-                        {{"Please write down your username, password, and Master Security Code, once lost they cannot be recovered." | translate}}
-                    </div>
-                    <div class="form-input">
-                        <label class="control-label" for="firstName">
-                            {{'First Name (Optional)' | translate}}
-                            <span [hidden]="firstName.valid || firstName.pristine" class="alert alert-danger">{{'A valid First Name is required.' | translate}}</span>
-                        </label>
-                        <input class="form-control" id="firstName" name="firstName" type="text" value="" [(ngModel)]="userInfo.firstName" #firstName="ngModel"
-                               pattern="[a-zA-Z\s]+$" autocomplete="off" />
-                    </div>
-                    <div class="form-input">
-                        <label class="control-label" for="lastName">
-                            {{'Last Name (Optional)' | translate}}
-                            <span [hidden]="lastName.valid || lastName.pristine" class="alert alert-danger">{{'A valid Last Name is required.' | translate}}</span>
-                        </label>
-                        <input class="form-control" id="lastName" type="text" value="" [(ngModel)]="userInfo.lastName" name="lastName" #lastName="ngModel"
-                               pattern="[a-zA-Z\s]+$" autocomplete="off" />
-                    </div>
-                    <div class="form-input">
-                        <label>
-                            {{'Email' | translate}}
-                            <span class="required">*</span>
-                            <span [hidden]="email.valid || email.pristine" class="alert alert-danger">{{'A valid email is required.' | translate}}</span>
-                        </label>
-                        <input type="email" value="" [(ngModel)]="userInfo.email" required 
-                                name="email" #email="ngModel" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$" autocomplete="off" />
-                    </div>
-                    <div class="form-input">
-                        <label for="login">
-                            {{'User Name' | translate}}:
-                            <span class="required">*</span>
-                            <span [hidden]="username.valid || username.pristine" class="alert alert-danger">{{'The User Name is required' | translate}}</span>
-                        </label>
-                        <input id="username" type="text" value="" [(ngModel)]="userInfo.username" required
-                                name="username" #username="ngModel" pattern="^[a-zA-Z][a-zA-Z0-9-_\.]{1,20}$" autocomplete="off" />
-                    </div>
-                    <div class="form-input">
-                        <label for="password">
-                            {{'Password' | translate}}:
-                            <span class="required">*</span>
-                            <span [hidden]="password.valid || password.pristine" class="alert alert-danger">{{'The Password is required' | translate}}</span>
-                        </label>
-                        <input id="password" [type]="inputTypePassword" value="" [(ngModel)]="userInfo.password" name="password" required #password="ngModel" />
-                        <button type="button" data-toggle="modal" data-target="#modalQrCode" id="btnQrCode" (click)="startQR()" *ngIf="hasQrCode">
-                            <i class="icon-select-all"></i>
-                        </button>
-                        <button type="button" (click)="showPassword()" *ngIf="inputTypePassword=='password'" title="Show Password">
-                            <i class="icon-eye"></i>
-                        </button>
-                        <button type="button" (click)="showPassword()" *ngIf="inputTypePassword=='text'" title="Hide Password ">
-                            <i class="icon-eye"></i>
-                        </button>
-                    </div>
-                    <div class="form-input">
-                        <label>
-                            {{'Confirm Password' | translate}}:
-                            <span class="required">*</span>
-                            <span [hidden]="password_confirmation.valid || password_confirmation.pristine" class="alert alert-danger">{{'The Password Confirmation is required' | translate}}</span>
-                            <span [hidden]="isPasswordEqual" class="alert alert-danger">{{'The passwords dont match.' | translate}}</span>
-                        </label>
-                        <input [type]="inputTypePassword" value="" [(ngModel)]="userInfoExtended.password_confirmation" name="password_confirmation"
-                               required #password_confirmation="ngModel" (change)="confirmPassword()" autocomplete="off" />
-                    </div>
-
-                    <div class="secutiry-code">
-                        <div class="wrapper">
-                            <span class="title">
-                                {{'This is your Master Security Code' | translate}}
-                            </span>
-                            <p class="recoveryKey" oncut="return false" onpaste="return false">{{ _shared.recoveryKey.recoveryKey }}</p>
-                            <p>{{'For security reasons, we strongly recommend you save this Master Security Code file to a secure external storage device, instead of your computer hard drive.' | translate}}</p>
-                        </div>
-                        <button type="button" class="btn copy2" [attr.data-clipboard-text]="_shared.recoveryKey.recoveryKey">
-                            <i class="icon-content-copy"></i>
-                        </button>
-                    </div>
-
-                    <div *ngIf="!errorMessage && errorMessage.length > 0" class="alert alert-danger" role="alert">
-                        <strong>{{'Error' | translate}}: </strong> {{ errorMessage }}
-                    </div>
-
-                    <div class="gauth-pwa clearfix">
-                        <div class="gauth">
-                            <re-captcha *ngIf="_env.showCaptcha" (resolved)="resolved($event)" [siteKey]="recaptchaKey" [(ngModel)]="formModel.captcha" name="captcha2" #captcha="ngModel"></re-captcha>
-                        </div>
-                    </div>
-                    <div class="alert-box alert-danger" *ngIf="!errorMessage && errorMessage.length > 0">
-                        <strong>{{'Error' | translate}}: </strong> {{ errorMessage }}
-                    </div>
-                    <div class="alert-box alert-danger" role="alert" *ngIf="createResponse && !createResponse.isValid &&  createResponse.error.message">
-                        <strong>{{'Error' | translate}}:</strong> {{createResponse.error.message}}
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <div class="terms">
-                        <input name="termsVersion" type="checkbox" value="{{ _shared.recoveryKey.termsVersion }}" placeholder="{{'Terms of use' | translate}}" [(ngModel)]="userInfo.termsVersion" #termsVersion="ngModel" required />
-                        <label for="termsVersion">
-                            {{'I do accept the term of use' | translate}}
-                            <span [hidden]="termsVersion.valid || termsVersion.pristine" class="alert alert-danger">{{'The term of use is required.' | translate}}</span>
-                        </label>
-                        <button type="button" (click)="showTerms = !showTerms;goToTop();">{{'Read the terms of use' | translate}}</button>
-                    </div>
-                    <button type="submit" class="btn btn-primary" [disabled]="!registerForm.form.valid || !isPasswordEqual || !isRecoveryKeyEqual">{{'Sign Up' | translate}}</button>
-                </div>
-                <div class="terms_use" *ngIf="showTerms">
-                    <div>
-                        <button type="button" class="close" (click)="showTerms = !showTerms">&times;</button>
-                        <h4 class="modal-title">{{'Terms of use' | translate}}</h4>
-                    </div>
-                    <div [innerHTML]="_shared.recoveryKey.termsText"></div>
-                </div>
-            </form>
-
-            <div class="alert-box alert-danger" role="alert" *ngIf="showInfoPanel">
-                {{'For security reasons, we strongly recommend you save this private key file to a secure external storage device, instead of your computer hard drive.' | translate}}
+            <div class="form-input form-input-key_comfirmation">
+              <label>
+                {{
+                  "Enter your Master Security Code below to confirm you have saved it"
+                    | translate
+                }}
+                <span class="required">*</span>
+                <span
+                  [hidden]="key_confirmation.valid || key_confirmation.pristine"
+                  class="alert alert-danger"
+                  >{{
+                    "The Master Security Code Confirmation is required"
+                      | translate
+                  }}</span
+                >
+                <span
+                  [hidden]="isRecoveryKeyEqual"
+                  class="alert alert-danger"
+                  >{{ "The recoveryKey does not match." | translate }}</span
+                >
+              </label>
+              <input
+                type="text"
+                value=""
+                [(ngModel)]="userInfoExtended.key_confirmation"
+                name="key_confirmation"
+                required
+                #key_confirmation="ngModel"
+                (ngModelChange)="confirmKey()"
+                placeholder="{{
+                  'Paste your Master Security Code here to confirm' | translate
+                }}"
+              />
             </div>
-
-            <div class="alert-box alert-info" role="alert" *ngIf="showInfoPanel">
-                <strong>{{'If your PRIVATE KEY was not saved, then copy the content below and save it in a SAFE PLACE.' | translate}}</strong>
-                <p id="print-area" class="break-word" [innerHTML]="exportHtml"></p>
-                <img src="/images/img_progress_sm_white.gif" *ngIf="!_shared.recoveryKey.recoveryKey || !export" />
-                <button class="btn btn-info pull-right" type="button" [attr.data-clipboard-text]="export">
-                    <i class="fa fa-clipboard"></i> {{'copy' | translate}}
-                </button>
-                <button class="btn btn-secondary pull-right" type="button" (click)="print()">
-                    <i class="fa fa-print"></i> {{'print' | translate}}
-                </button>
-            </div>
-
-            <div class="alert-box alert-warning loader" role="alert" *ngIf="sending">
-                <img src="/images/img_progress_sm_warning.gif" /> {{'processing your request...' | translate}}
-            </div>
-
-            <div class="button-goto" role="alert" *ngIf="createResponse && createResponse.isValid">
-                <button class="btn btn-primary" [routerLink]="['/overview']">{{'Go to overview' | translate}}</button>
-            </div>
+          </ng-container>
         </div>
+        <div class="modal-footer reverse">
+          <button
+            #btnSubmit
+            class="btn btn-primary"
+            [disabled]="!codeConfirmKey"
+            type="submit"
+          >
+            {{ "Next" | translate }}
+          </button>
+        </div>
+      </form>
+      <form
+        (ngSubmit)="onSubmit()"
+        #registerForm="ngForm"
+        autocomplete="off"
+        *ngIf="inProgress"
+      >
+        <div class="modal-body">
+          <div class="alert-box alert-warning" role="alert">
+            {{
+              "Please write down your username, password, and Master Security Code, once lost they cannot be recovered."
+                | translate
+            }}
+          </div>
+          <div class="form-input">
+            <label class="control-label" for="firstName">
+              {{ "First Name (Optional)" | translate }}
+              <span
+                [hidden]="firstName.valid || firstName.pristine"
+                class="alert alert-danger"
+                >{{ "A valid First Name is required." | translate }}</span
+              >
+            </label>
+            <input
+              class="form-control"
+              id="firstName"
+              name="firstName"
+              type="text"
+              value=""
+              [(ngModel)]="userInfo.firstName"
+              #firstName="ngModel"
+              pattern="[a-zA-Z\s]+$"
+              autocomplete="off"
+            />
+          </div>
+          <div class="form-input">
+            <label class="control-label" for="lastName">
+              {{ "Last Name (Optional)" | translate }}
+              <span
+                [hidden]="lastName.valid || lastName.pristine"
+                class="alert alert-danger"
+                >{{ "A valid Last Name is required." | translate }}</span
+              >
+            </label>
+            <input
+              class="form-control"
+              id="lastName"
+              type="text"
+              value=""
+              [(ngModel)]="userInfo.lastName"
+              name="lastName"
+              #lastName="ngModel"
+              pattern="[a-zA-Z\s]+$"
+              autocomplete="off"
+            />
+          </div>
+          <div class="form-input">
+            <label>
+              {{ "Email" | translate }}
+              <span class="required">*</span>
+              <span
+                [hidden]="email.valid || email.pristine"
+                class="alert alert-danger"
+                >{{ "A valid email is required." | translate }}</span
+              >
+            </label>
+            <input
+              type="email"
+              value=""
+              [(ngModel)]="userInfo.email"
+              required
+              name="email"
+              #email="ngModel"
+              pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$"
+              autocomplete="off"
+            />
+          </div>
+          <div class="form-input">
+            <label for="login">
+              {{ "User Name" | translate }}:
+              <span class="required">*</span>
+              <span
+                [hidden]="username.valid || username.pristine"
+                class="alert alert-danger"
+                >{{ "The User Name is required" | translate }}</span
+              >
+            </label>
+            <input
+              id="username"
+              type="text"
+              value=""
+              [(ngModel)]="userInfo.username"
+              required
+              name="username"
+              #username="ngModel"
+              pattern="^[a-zA-Z][a-zA-Z0-9-_\.]{1,20}$"
+              autocomplete="off"
+            />
+          </div>
+          <div class="form-input">
+            <label for="password">
+              {{ "Password" | translate }}:
+              <span class="required">*</span>
+              <span
+                [hidden]="password.valid || password.pristine"
+                class="alert alert-danger"
+                >{{ "The Password is required" | translate }}</span
+              >
+            </label>
+            <input
+              id="password"
+              [type]="inputTypePassword"
+              value=""
+              [(ngModel)]="userInfo.password"
+              name="password"
+              required
+              #password="ngModel"
+            />
+            <button
+              type="button"
+              data-toggle="modal"
+              data-target="#modalQrCode"
+              id="btnQrCode"
+              (click)="startQR()"
+              *ngIf="hasQrCode"
+            >
+              <i class="icon-select-all"></i>
+            </button>
+            <button
+              type="button"
+              (click)="showPassword()"
+              *ngIf="inputTypePassword == 'password'"
+              title="Show Password"
+            >
+              <i class="icon-eye"></i>
+            </button>
+            <button
+              type="button"
+              (click)="showPassword()"
+              *ngIf="inputTypePassword == 'text'"
+              title="Hide Password "
+            >
+              <i class="icon-eye"></i>
+            </button>
+          </div>
+          <div class="form-input">
+            <label>
+              {{ "Confirm Password" | translate }}:
+              <span class="required">*</span>
+              <span
+                [hidden]="
+                  password_confirmation.valid || password_confirmation.pristine
+                "
+                class="alert alert-danger"
+                >{{ "The Password Confirmation is required" | translate }}</span
+              >
+              <span [hidden]="isPasswordEqual" class="alert alert-danger">{{
+                "The passwords dont match." | translate
+              }}</span>
+            </label>
+            <input
+              [type]="inputTypePassword"
+              value=""
+              [(ngModel)]="userInfoExtended.password_confirmation"
+              name="password_confirmation"
+              required
+              #password_confirmation="ngModel"
+              (change)="confirmPassword()"
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="secutiry-code">
+            <div class="wrapper">
+              <span class="title">
+                {{ "This is your Master Security Code" | translate }}
+              </span>
+              <p
+                class="recoveryKey"
+                oncut="return false"
+                onpaste="return false"
+              >
+                {{ _shared.recoveryKey.recoveryKey }}
+              </p>
+              <p>
+                {{
+                  "For security reasons, we strongly recommend you save this Master Security Code file to a secure external storage device, instead of your computer hard drive."
+                    | translate
+                }}
+              </p>
+            </div>
+            <button
+              type="button"
+              class="btn copy2"
+              [attr.data-clipboard-text]="_shared.recoveryKey.recoveryKey"
+            >
+              <i class="icon-content-copy"></i>
+            </button>
+          </div>
+
+          <div
+            *ngIf="!errorMessage && errorMessage.length > 0"
+            class="alert alert-danger"
+            role="alert"
+          >
+            <strong>{{ "Error" | translate }}: </strong> {{ errorMessage }}
+          </div>
+
+          <div class="gauth-pwa clearfix">
+            <div class="gauth">
+              <re-captcha
+                *ngIf="_env.showCaptcha"
+                (resolved)="resolved($event)"
+                [siteKey]="recaptchaKey"
+                [(ngModel)]="formModel.captcha"
+                name="captcha2"
+                #captcha="ngModel"
+              ></re-captcha>
+            </div>
+          </div>
+          <div
+            class="alert-box alert-danger"
+            *ngIf="!errorMessage && errorMessage.length > 0"
+          >
+            <strong>{{ "Error" | translate }}: </strong> {{ errorMessage }}
+          </div>
+          <div
+            class="alert-box alert-danger"
+            role="alert"
+            *ngIf="
+              createResponse &&
+              !createResponse.isValid &&
+              createResponse.error.message
+            "
+          >
+            <strong>{{ "Error" | translate }}:</strong>
+            {{ createResponse.error.message }}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <div class="terms">
+            <input
+              name="termsVersion"
+              type="checkbox"
+              value="{{ _shared.recoveryKey.termsVersion }}"
+              placeholder="{{ 'Terms of use' | translate }}"
+              [(ngModel)]="userInfo.termsVersion"
+              #termsVersion="ngModel"
+              required
+            />
+            <label for="termsVersion">
+              {{ "I do accept the term of use" | translate }}
+              <span
+                [hidden]="termsVersion.valid || termsVersion.pristine"
+                class="alert alert-danger"
+                >{{ "The term of use is required." | translate }}</span
+              >
+            </label>
+            <button type="button" (click)="showTerms = !showTerms; goToTop()">
+              {{ "Read the terms of use" | translate }}
+            </button>
+          </div>
+          <button
+            #btnSubmit
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="
+              !registerForm.form.valid ||
+              !isPasswordEqual ||
+              !isRecoveryKeyEqual
+            "
+          >
+            {{ "Sign Up" | translate }}
+          </button>
+        </div>
+        <div class="terms_use" *ngIf="showTerms">
+          <div>
+            <button
+              type="button"
+              class="close"
+              (click)="showTerms = !showTerms"
+            >
+              &times;
+            </button>
+            <h4 class="modal-title">{{ "Terms of use" | translate }}</h4>
+          </div>
+          <div [innerHTML]="_shared.recoveryKey.termsText"></div>
+        </div>
+      </form>
+
+      <div class="alert-box alert-danger" role="alert" *ngIf="showInfoPanel">
+        {{
+          "For security reasons, we strongly recommend you save this private key file to a secure external storage device, instead of your computer hard drive."
+            | translate
+        }}
+      </div>
+
+      <div class="alert-box alert-info" role="alert" *ngIf="showInfoPanel">
+        <strong>{{
+          "If your PRIVATE KEY was not saved, then copy the content below and save it in a SAFE PLACE."
+            | translate
+        }}</strong>
+        <p id="print-area" class="break-word" [innerHTML]="exportHtml"></p>
+        <img
+          src="/images/img_progress_sm_white.gif"
+          *ngIf="!_shared.recoveryKey.recoveryKey || !export"
+        />
+        <button
+          class="btn btn-info pull-right"
+          type="button"
+          [attr.data-clipboard-text]="export"
+        >
+          <i class="fa fa-clipboard"></i> {{ "copy" | translate }}
+        </button>
+      </div>
+
+      <div class="alert-box alert-warning loader" role="alert" *ngIf="sending">
+        <img src="/images/img_progress_sm_warning.gif" />
+        {{ "processing your request..." | translate }}
+      </div>
+
+      <div
+        class="button-goto"
+        role="alert"
+        *ngIf="createResponse && createResponse.isValid"
+      >
+        <button class="btn btn-primary" [routerLink]="['/overview']">
+          {{ "Go to overview" | translate }}
+        </button>
+      </div>
     </div>
+  </div>
 </div>
 
 <!-- Modal -->
 <div class="modal fade" id="modalQrCode" role="dialog" style="display: none;">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" (click)="stopQR()">&times;</button>
-                <h4 class="modal-title">Scan your QR CODE</h4>
-            </div>
-            <div class="modal-body">
-                <iframe scrolling="no" id="iQR" src="" class="iframeQR"></iframe>
-            </div>
-            <div class="modal-footer text-right">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal" (click)="stopQR()">Close</button>
-            </div>
-        </div>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button
+          type="button"
+          class="close"
+          data-dismiss="modal"
+          (click)="stopQR()"
+        >
+          &times;
+        </button>
+        <h4 class="modal-title">Scan your QR CODE</h4>
+      </div>
+      <div class="modal-body">
+        <iframe scrolling="no" id="iQR" src="" class="iframeQR"></iframe>
+      </div>
+      <div class="modal-footer text-right">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          data-dismiss="modal"
+          (click)="stopQR()"
+        >
+          Close
+        </button>
+      </div>
     </div>
+  </div>
 </div>
 
 <!-- MasterSecurity QRCode -->
-<div class="modal fade" id="myModalMasterSecurityCode" role="dialog" style="display: none;">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title">{{'MasterSecurityCode' | translate}}</h4>
-            </div>
-            <div class="modal-body" id="print-area-mastersecuritycode">
-
-                <div class="alert alert-info" role="alert">
-                    <button class="btn btn-secondary pull-right" type="button" (click)="print()">
-                        <i class="fa fa-print"></i> {{'print' | translate}}
-                    </button>
-                    <button id="btn" class="btn btn-info pull-right" type="button" [attr.data-clipboard-text]="_shared.recoveryKey.recoveryKey">
-                        <i class="fa fa-clipboard"></i> {{'copy' | translate}}
-                    </button>
-                    <strong>{{'Master Security Code' | translate}}: </strong>
-                    <br />{{ _shared.recoveryKey.recoveryKey }}
-                    <img src="/images/img_progress_sm_white.gif" *ngIf="!_shared.recoveryKey.recoveryKey" />
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">{{'Close' | translate}}</button>
-            </div>
+<div
+  class="modal fade"
+  id="myModalMasterSecurityCode"
+  role="dialog"
+  style="display: none;"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">
+          &times;
+        </button>
+        <h4 class="modal-title">{{ "MasterSecurityCode" | translate }}</h4>
+      </div>
+      <div class="modal-body" id="print-area-mastersecuritycode">
+        <div class="alert alert-info" role="alert">
+          <button
+            id="btn"
+            class="btn btn-info pull-right"
+            type="button"
+            [attr.data-clipboard-text]="_shared.recoveryKey.recoveryKey"
+          >
+            <i class="fa fa-clipboard"></i> {{ "copy" | translate }}
+          </button>
+          <strong>{{ "Master Security Code" | translate }}: </strong>
+          <br />{{ _shared.recoveryKey.recoveryKey }}
+          <img
+            src="/images/img_progress_sm_white.gif"
+            *ngIf="!_shared.recoveryKey.recoveryKey"
+          />
         </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">
+          {{ "Close" | translate }}
+        </button>
+      </div>
     </div>
+  </div>
 </div>

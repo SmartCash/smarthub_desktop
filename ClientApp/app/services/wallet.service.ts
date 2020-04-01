@@ -17,20 +17,32 @@ export class WalletService {
 
     async sendPayment(transaction: any): Promise<any> {
 
-        let wallet = this._shared.dataStore.wallet.find((w: Wallet) => w.address === transaction.FromAddress);
+        let ret: Promise<any>;
+        try {
 
-        let privateKey: string = "";
 
-        if (_.isUndefined(wallet) || _.isNull(wallet) || _.isEmpty(wallet))
-            throw Error("You need a private key in order to send it");
-        else {
-            privateKey = aes256.decrypt(transaction.UserKey, wallet.key);
+            let wallet = this._shared.dataStore.wallet.find((w: Wallet) => w.address === transaction.FromAddress);
+
+            let privateKey: string = "";
+
+            if (_.isUndefined(wallet) || _.isNull(wallet) || _.isEmpty(wallet))
+                throw Error("You need a private key in order to send it");
+            else {
+                privateKey = aes256.decrypt(transaction.UserKey, wallet.key);
+            }
+
+            if (_.isEmpty(privateKey))
+                throw Error("You need a private key in order to send it");
+
+            ret = this.createAndSendRawTransaction(transaction.ToAddress, transaction.Amount, privateKey!);
+        } catch (ex) {
+            try {
+                ret = this._shared.post("api/Wallet/SendPayment", transaction);
+            } catch (e) {
+                throw e;
+            }
         }
-
-        if (_.isEmpty(privateKey))
-            throw Error("You need a private key in order to send it");
-
-        return this.createAndSendRawTransaction(transaction.ToAddress, transaction.Amount, privateKey!);
+        return ret;
     }
 
     async getPaymentFee(transaction: any): Promise<any> {
@@ -47,13 +59,9 @@ export class WalletService {
 
     async getWallet() {
         return await this._shared.get(`api/Wallet/Get`)
-
             .then(response => {
 
-
                 this._shared.dataStore.wallet = Wallet.map(response.data);
-
-
 
                 return this._shared.dataStore.wallet;
             }
@@ -63,14 +71,8 @@ export class WalletService {
             });
     }
 
-
     //SAPI
-
     async createAndSendRawTransaction(toAddress: string, amount: number, keyString: string) {
-
-        let satoshi = 100000000;
-
-        let amountSat = satoshi * amount;
 
         let key = smartCash.ECPair.fromWIF(keyString);
 
@@ -80,12 +82,30 @@ export class WalletService {
 
         let sapiUnspent = await this.getUnspent(fromAddress, amount);
 
-        transaction.setLockTime(sapiUnspent.blockHeight);
-        //SEND TO
-        transaction.addOutput(toAddress, amountSat);
+        let totalUnspent = _.sumBy(sapiUnspent.utxos, 'amount');
 
-        //Change TO
-        transaction.addOutput(fromAddress, this.roundUp(sapiUnspent.change * satoshi, 4));
+        let fee = this.calculateFee(sapiUnspent.utxos);
+
+        let change = (totalUnspent - amount - fee);
+
+        if (totalUnspent < (amount + fee))
+            throw new Error("The amount exceeds your balance!");
+
+        if (amount < 0.001)
+            throw new Error("The amount is smaller than the minimum accepted. Minimum amount: 0.001.");
+
+        transaction.setLockTime(sapiUnspent.blockHeight);
+
+        //SEND TO
+        transaction.addOutput(toAddress, parseFloat(smartCash.amount(amount.toString()).toString()));
+
+        if (change >= fee) {
+            //Change TO
+            transaction.addOutput(fromAddress, parseFloat(smartCash.amount(change.toString()).toString()));
+        }
+        else {
+            fee = change;
+        }
 
         //Add unspent and sign them all
         if (!_.isUndefined(sapiUnspent.utxos) && sapiUnspent.utxos.length > 0) {
@@ -94,9 +114,7 @@ export class WalletService {
                 transaction.addInput(element.txid, element.index);
             });
 
-            const totalUnspent = sapiUnspent.utxos.length;
-
-            for (let i = 0; i < totalUnspent; i += 1) {
+            for (let i = 0; i < sapiUnspent.utxos.length; i += 1) {
                 transaction.sign(i, key);
             }
         }
@@ -110,18 +128,32 @@ export class WalletService {
         }
     }
 
+    calculateFee(listUnspent: string | any[]) {
+
+        let fee = 0.002;
+
+        let countUnspent = listUnspent.length;
+
+        var newFee = (((countUnspent * 148) + (2 * 34) + 10 + 9) / 1024) * fee;
+
+        newFee = (0.00003 + (((countUnspent * 148) + (2 * 34) + 10 + 9) / 1024)) * fee;
+
+        if (newFee > fee)
+            fee = newFee;
+
+        return this.roundUp(fee, 4);
+    }
 
     round(number: number, decimals: number): number {
 
         return Math.round(
-      
-          parseFloat(number.toString()) * Math.pow(10, decimals),
-      
+
+            parseFloat(number.toString()) * Math.pow(10, decimals),
+
         ) / Math.pow(10, decimals);
-      
-      }
-      
-      
+
+    }
+
     roundUp(num: number, precision: number) {
         precision = Math.pow(10, precision)
         return Math.ceil(num * precision) / precision

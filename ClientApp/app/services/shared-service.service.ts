@@ -12,6 +12,7 @@ import * as _ from 'lodash';
 import { isPlatformBrowser } from '@angular/common';
 import { saveAs } from 'file-saver';
 import * as aes256 from 'aes256';
+import { PrivateKeysGenerator } from '../pages/register/privatekeys.generator';
 
 @Injectable()
 export class SharedService {
@@ -277,10 +278,11 @@ export class SharedService {
         return _.find(this.wallet, ['address', address]);
     }
 
-    async exportPrivateKeys(privateKeyResponse: any, username: any) {
-        let content = await this.prepareToCsvPrivateKeys(privateKeyResponse, username);
-        await this.download(content, `privateKeys_${username}.txt`, 'text/plain');
-        return content;
+    async exportPrivateKeys(privateKeyResponse: any, username: any, recoveryKey: any) {
+        PrivateKeysGenerator.generate(privateKeyResponse, username, recoveryKey);
+        // let content = await this.prepareToCsvPrivateKeys(privateKeyResponse, username);
+        // await this.download(content, `privateKeys_${username}.txt`, 'text/plain');
+        // return content;
     }
 
     async prepareToCsvPrivateKeys(privateKeyResponse: any, username: any) {
@@ -357,9 +359,7 @@ export class SharedService {
                 wallet = Object.assign(wallet, balance);
             });
         }
-
         getBalances();
-        setTimeout(getBalances, 60000);
     }
 
     updateGetInfo(response: any, secretKey: string) {

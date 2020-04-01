@@ -277,3 +277,6 @@ declare module 'smartcashjs-lib/src' {
 }
 
 declare module 'aes256';
+declare module 'jszip';
+declare module 'qrious';
+declare module 'jspdf';

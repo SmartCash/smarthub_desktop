@@ -1,0 +1,110 @@
+<div class="card">
+  <div class="card-header" [ngClass]="{ active: showForm }">
+    <i class="icon-price-max"></i>
+    <h3 class="h4">{{ "Export" | translate }}</h3>
+    <button [ngClass]="{ active: showForm }" (click)="showForm = !showForm">
+      &nbsp;
+    </button>
+  </div>
+  <div class="card-body" *ngIf="showForm">
+    <form (ngSubmit)="onSubmit()" #importForm="ngForm">
+      <div class="form-input">
+        <label for="recoveryKey"
+          >{{ "Password" | translate }}: <span class="required">*</span>
+          <span
+            [hidden]="recoveryKey.valid || recoveryKey.pristine"
+            class="alert alert-danger"
+            >{{ "A valid Password is required." | translate }}</span
+          ></label
+        >
+        <input
+          id="recoveryKey"
+          name="recoveryKey"
+          type="password"
+          value=""
+          [(ngModel)]="export.recoveryKey"
+          #recoveryKey="ngModel"
+          autocomplete="off"
+          required
+        />
+      </div>
+      <div class="form-input" *ngIf="_shared.user.is2FAEnabled">
+        <label for="2fa"
+          >{{ "Two FA Code" | translate }}: <span class="required">*</span>
+          <span
+            [hidden]="code.valid || code.pristine"
+            class="alert alert-danger"
+            >{{ "A valid code is required." | translate }}</span
+          ></label
+        >
+        <input
+          id="2fa"
+          name="code"
+          type="password"
+          value=""
+          [(ngModel)]="export.code"
+          #code="ngModel"
+          autocomplete="off"
+        />
+      </div>
+      <div class="text-right">
+        <button
+          #btnSubmit
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="!importForm.form.valid || inProgress"
+        >
+          {{ "Export Now" | translate }}
+        </button>
+      </div>
+      <div
+        *ngIf="response && !response.isValid"
+        class="alert alert-danger"
+        role="alert"
+      >
+        <strong>{{ "Error" | translate }}: </strong>
+        {{ response.error.message }}
+      </div>
+      <span
+        class="alert-box alert-danger"
+        role="alert"
+        *ngIf="response && response.isValid && exportHtml"
+      >
+        {{
+          "For security reasons, we strongly recommend you save this private key file to a secure external storage device, instead of your computer hard drive."
+            | translate
+        }}
+      </span>
+      <span
+        class="alert-box alert-info"
+        role="alert"
+        *ngIf="response && response.isValid && exportHtml"
+      >
+        {{
+          "If your PRIVATE KEY was not saved, then copy the content below and save it in a SAFE PLACE."
+            | translate
+        }}
+      </span>
+      <div
+        class="exported-html"
+        *ngIf="response && response.isValid && exportHtml"
+      >
+        <div class="break-word" [innerHTML]="exportHtml"></div>
+        <button
+          class="btn btn-info"
+          type="button"
+          [attr.data-clipboard-text]="exportRequest"
+        >
+          {{ "copy" | translate }}
+        </button>
+        <button
+          class="btn btn-info"
+          type="button"
+          (click)="showPaperWallet(export.recoveryKey)"
+        >
+          {{ "Paper Wallet" | translate }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,272 +1,251 @@
-import { UserRequest } from '../../models/request/user.request.model';
-import { Util } from '../../models/util';
-import { UserService } from '../../services/user.service';
-import { Router } from '@angular/router';
-import { Component, OnInit, PLATFORM_ID, Inject } from '@angular/core';
-import { SharedService } from '../../services/shared-service.service';
-import { WalletService } from '../../services/wallet.service';
-import { TokenRequest } from '../../models/request/token-request.model';
-import * as jQuery from 'jquery';
-import { DeviceDetectorService } from '../../modules/ngx-device-detector/device-detector.service';
-import { isPlatformBrowser } from '@angular/common';
-import { environment } from '../../app.environment';
-import { SpinnerService } from '../../services/spinner.service';
+import { UserRequest } from "../../models/request/user.request.model";
+import { Util } from "../../models/util";
+import { UserService } from "../../services/user.service";
+import { Router } from "@angular/router";
+import {
+  Component,
+  OnInit,
+  PLATFORM_ID,
+  Inject,
+  ViewChild,
+  ElementRef
+} from "@angular/core";
+import { SharedService } from "../../services/shared-service.service";
+import { WalletService } from "../../services/wallet.service";
+import { TokenRequest } from "../../models/request/token-request.model";
+import * as jQuery from "jquery";
+import { DeviceDetectorService } from "../../modules/ngx-device-detector/device-detector.service";
+import { isPlatformBrowser } from "@angular/common";
+import { environment } from "../../app.environment";
+import { SpinnerService } from "../../services/spinner.service";
 
 @Component({
-    selector: 'register',
-    styleUrls: ['./register.component.css'],
-    templateUrl: './register.component.html'
+  selector: "register",
+  styleUrls: ["./register.component.css"],
+  templateUrl: "./register.component.html"
 })
-
 export class RegisterComponent implements OnInit {
-    isCopied1: boolean = false;
-    public sending: boolean = false;
-    public sendText: string = "Send";
-    public sendingText: string = "Sending...";
-    public sendButtonText = this.sendText;
-    public errorMessage = "asdasd";
-    public createResponse: any;
-    public showInfoPanel: boolean = false;
-    public export: any;
-    public exportHtml: string;
-    public showTerms: boolean = false;
-    public formModel = { captcha: undefined };
-    public isNative = false;
-    public isMobile = false;
-    public _env = environment;
-    public codeConfirmKey: boolean = false;
+  isCopied1: boolean = false;
+  public sending: boolean = false;
+  public sendText: string = "Send";
+  public sendingText: string = "Sending...";
+  public sendButtonText = this.sendText;
+  public errorMessage = "asdasd";
+  public createResponse: any;
+  public showInfoPanel: boolean = false;
+  public export: any;
+  public showTerms: boolean = false;
+  public formModel = { captcha: undefined };
+  public isNative = false;
+  public isMobile = false;
+  public _env = environment;
+  public codeConfirmKey: boolean = false;
+  @ViewChild("btnSubmit", { read: ElementRef })
+  private btnSubmit: ElementRef;
 
-    _hasQrCode: boolean = true;
-    get hasQrCode(): boolean {
-        return this._hasQrCode;
+  _hasQrCode: boolean = true;
+  get hasQrCode(): boolean {
+    return this._hasQrCode;
+  }
+  set hasQrCode(value: boolean) {
+    this._hasQrCode = value;
+  }
+
+  _inProgress: boolean = false;
+  get inProgress(): boolean {
+    return this._inProgress;
+  }
+  set inProgress(value: boolean) {
+    this._inProgress = value;
+  }
+
+  _isPasswordEqual: boolean = true;
+  get isPasswordEqual(): boolean {
+    return this._isPasswordEqual;
+  }
+  set isPasswordEqual(value: boolean) {
+    this._isPasswordEqual = value;
+  }
+
+  _isRecoveryKeyEqual: boolean = true;
+  get isRecoveryKeyEqual(): boolean {
+    return this._isRecoveryKeyEqual;
+  }
+  set isRecoveryKeyEqual(value: boolean) {
+    this._isRecoveryKeyEqual = value;
+  }
+
+  _inputTypePassword: string = "password";
+  get inputTypePassword(): string {
+    return this._inputTypePassword;
+  }
+  set inputTypePassword(value: string) {
+    this._inputTypePassword = value;
+  }
+
+  showPassword() {
+    if (this.inputTypePassword === "password") {
+      this.inputTypePassword = "text";
+    } else {
+      this.inputTypePassword = "password";
     }
-    set hasQrCode(value: boolean) {
-        this._hasQrCode = value;
+  }
+
+  public userInfo: UserRequest = new UserRequest();
+  public userInfoExtended = { password_confirmation: "", key_confirmation: "" };
+
+  constructor(
+    public _spinner: SpinnerService,
+    public _userService: UserService,
+    private _router: Router,
+    public _shared: SharedService,
+    public _wallet: WalletService,
+    private _device: DeviceDetectorService,
+    @Inject(PLATFORM_ID) platformId: Object
+  ) {
+    let isPWA;
+    if (isPlatformBrowser(platformId)) {
+      isPWA = window.matchMedia("(display-mode: standalone)").matches;
     }
 
-    _inProgress: boolean = false;
-    get inProgress(): boolean {
-        return this._inProgress;
-    }
-    set inProgress(value: boolean) {
-        this._inProgress = value;
-    }
-
-    _isPasswordEqual: boolean = true;
-    get isPasswordEqual(): boolean {
-        return this._isPasswordEqual;
-    }
-    set isPasswordEqual(value: boolean) {
-        this._isPasswordEqual = value;
+    if (isPlatformBrowser(platformId)) {
+      this.isNative = /AppName\/[0-9\.]+$/.test((<any>navigator).userAgent);
+      this.isMobile = /iPhone|iPad|iPod|Android/i.test(
+        (<any>navigator).userAgent
+      );
     }
 
-    _isRecoveryKeyEqual: boolean = true;
-    get isRecoveryKeyEqual(): boolean {
-        return this._isRecoveryKeyEqual;
+    let browser = _device.getDeviceInfo().browser;
+    let lameBrowsers = ["safari"];
+    if (lameBrowsers.indexOf(browser) > -1 && isPWA) {
+      this.hasQrCode = false;
     }
-    set isRecoveryKeyEqual(value: boolean) {
-        this._isRecoveryKeyEqual = value;
-    }
+  }
 
-    _inputTypePassword: string = "password";
-    get inputTypePassword(): string {
-        return this._inputTypePassword;
-    }
-    set inputTypePassword(value: string) {
-        this._inputTypePassword = value;
-    }
+  ngOnInit() {
+    this.inProgress = false;
+  }
 
-    showPassword() {
-        if (this.inputTypePassword === "password") {
-            this.inputTypePassword = "text";
-        } else {
-            this.inputTypePassword = "password";
-        }
-    }
+  generateMSK() {
+    this._userService.getNewkey();
+  }
 
-    public userInfo: UserRequest = new UserRequest;
-    public userInfoExtended = { "password_confirmation": "", "key_confirmation": "" };
+  public confirmPassword() {
+    this.isPasswordEqual =
+      this.userInfo.password === this.userInfoExtended.password_confirmation;
+  }
 
-    constructor(
-        public _spinner: SpinnerService,
-        public _userService: UserService,
-        private _router: Router,
-        public _shared: SharedService,
-        public _wallet: WalletService,
-        private _device: DeviceDetectorService,
-        @Inject(PLATFORM_ID) platformId: Object,
+  public confirmKey() {
+    this.isRecoveryKeyEqual =
+      this._shared.recoveryKey.recoveryKey ===
+      this.userInfoExtended.key_confirmation;
+    if (
+      this._shared.recoveryKey.recoveryKey ===
+      this.userInfoExtended.key_confirmation
     ) {
-        
-        let isPWA;
-        if (isPlatformBrowser(platformId)) {
-            isPWA = window.matchMedia('(display-mode: standalone)').matches;
-        }
+      this.codeConfirmKey = true;
+    } else {
+      this.codeConfirmKey = false;
+    }
+  }
 
-        if (isPlatformBrowser(platformId)) {
-            this.isNative = (/AppName\/[0-9\.]+$/.test((<any>navigator).userAgent));
-            this.isMobile = /iPhone|iPad|iPod|Android/i.test((<any>navigator).userAgent);
-        }
+  async onSubmit() {
+    await this.register();
+  }
 
-        let browser = _device.getDeviceInfo().browser;
-        let lameBrowsers = ['safari'];
-        if (lameBrowsers.indexOf(browser) > -1 && isPWA) {
-            this.hasQrCode = false;
-        }
+  async register() {
+    this.sending = true;
+    this.sendButtonText = this.sendingText;
+    this.inProgress = true;
+    Util.setButtonAsWaitState(this.btnSubmit);
+
+    this.userInfo.recoveryKey = this._shared.recoveryKey.recoveryKey;
+    this.userInfo.termsVersion = this._shared.recoveryKey.termsVersion;
+    this.createResponse = await this._userService.createUser(this.userInfo);
+
+    if (this.createResponse.isValid) {
+      await this.Login();
+    } else {
+      this.errorMessage = this.createResponse.error;
+      this.userInfo.termsVersion = null!;
     }
 
-    ngOnInit() {
-        this.inProgress = false;
-    }
+    Util.setButtonAsReadyState(this.btnSubmit);
+    // this.inProgress = false;
+    this.sending = false;
+    this.sendButtonText = this.sendText;
+  }
 
-    generateMSK() {
-        this._userService.getNewkey();
-    }
+  async Login() {
+    let token = new TokenRequest();
+    token.username = this.userInfo.username;
+    token.password = this.userInfo.password;
 
-    public confirmPassword() {
-        this.isPasswordEqual = this.userInfo.password === this.userInfoExtended.password_confirmation;
-    }
+    await this._userService.getUserToken(token);
 
-    public confirmKey() {
-        this.isRecoveryKeyEqual = this._shared.recoveryKey.recoveryKey === this.userInfoExtended.key_confirmation;
-        if(this._shared.recoveryKey.recoveryKey === this.userInfoExtended.key_confirmation) {
-            this.codeConfirmKey = true;
-        } else {
-            this.codeConfirmKey = false;
-        }
-    }
+    if (this._shared.isTokenValid) {
+      await this._userService.getUser(token);
 
-    async onSubmit() {
-        await this.register();
-    }
+      await this._wallet.getWallet();
 
-    async register() {
-        this.sending = true;
-        this.sendButtonText = this.sendingText;
-        this.inProgress = true;
+      await this.setIsAuthenticated();
 
-        this.userInfo.recoveryKey = this._shared.recoveryKey.recoveryKey;
-        this.userInfo.termsVersion = this._shared.recoveryKey.termsVersion;
-        this.createResponse = await this._userService.createUser(this.userInfo);
+      let exportResponse = await this._wallet.exportWallet({
+        data: this._shared.recoveryKey.recoveryKey,
+        userkey: token.password
+      });
 
-        if (this.createResponse.isValid) {
-            await this.Login();
-        } else {
-            this.errorMessage = this.createResponse.error;
-            this.userInfo.termsVersion = null!;
-        }
-
-        // this.inProgress = false;
-        this.sending = false;
-        this.sendButtonText = this.sendText;
-    }
-
-    async Login() {
-        let token = new TokenRequest;
-        token.username = this.userInfo.username;
-        token.password = this.userInfo.password;
-
-        await this._userService.getUserToken(token);
-        
-        if (this._shared.isTokenValid) {
-            
-            await this._userService.getUser(token);
-            
-            await this._wallet.getWallet();
-            
-            await this.setIsAuthenticated();
-
-            
-            let exportResponse = await this._wallet.exportWallet({ "data": this._shared.recoveryKey.recoveryKey });
-            if (Util.isValidObject(exportResponse) && exportResponse.isValid) {
-                this.export = await this._shared.exportPrivateKeys(exportResponse, token.username);
-                this.exportHtml = this.export.toString();
-
-                while (Util.isValidAndNotEmpty(this.exportHtml) && this.exportHtml.indexOf('\n') > -1) {
-                    this.exportHtml = this.exportHtml.replace("\n", "<br />");
-                }
-            }
-
-            let redirect = confirm("Did you save your Master Security Code and your Private Key? Can we redirect you?");
-
-            if (redirect) {
-                this.redirectIfAuthenticated();
-            }
-            else {
-                this.showInfoPanel = true;
-            }
-        }
-    }
-
-    async securityCodeConfirm() {
-        this.inProgress = true;
-    }
-
-    redirectIfAuthenticated() {
-        if (this._shared.isAuthenticated) {
-            this._router.navigate(['/overview']);
-        }
-    }
-
-    resolved(captchaResponse: string) {
-        this.userInfo.responseRecaptcha = captchaResponse;
-    }
-
-    private async setIsAuthenticated() {
-        this._shared.dataStore.isAuthenticated = this._shared.isTokenValid;
-    }
-
-    print(): void {
-        let printContents, popupWin;
-        printContents = $("#print-area").html();
-        popupWin = window.open('', '_blank', 'top=0,left=0,height=100%,width=auto');
-        popupWin!.document.open();
-        popupWin!.document.write(`
-          <html>
-            <head>
-              <title>Print tab</title>
-              <style>
-              
-              </style>
-            </head>
-        <body onload="window.print();window.close()">${printContents}</body>
-          </html>`
+      if (Util.isValidObject(exportResponse) && exportResponse.isValid) {
+        await this._shared.exportPrivateKeys(
+          exportResponse,
+          token.username,
+          this._shared.recoveryKey.recoveryKey
         );
-        popupWin!.document.close();
-    }
+      }
 
-    printMasterSecurityCode(): void {
-        let printContents, popupWin;
-        printContents = $("#print-area-mastersecuritycode").html();
-        popupWin = window.open('', '_blank', 'top=0,left=0,height=100%,width=auto');
-        popupWin!.document.open();
-        popupWin!.document.write(`
-                  <html>
-                    <head>
-                      <title>Print tab</title>
-                      <style>
-                      
-                      </style>
-                    </head>
-                <body onload="window.print();window.close()">${printContents}</body>
-                  </html>`
-        );
-        popupWin!.document.close();
-    }
+      let redirect = confirm(
+        "Did you save your Master Security Code and your Private Key? Can we redirect you?"
+      );
 
-    goToTop() {
-        jQuery('.page-register').scrollTop(0);
+      if (redirect) {
+        this.redirectIfAuthenticated();
+      } else {
+        this.showInfoPanel = true;
+      }
     }
+  }
 
-    async startQR() {
-        
-        $("#iQR").attr("src", "qr/qrcode/index.html?password");
-    }
+  async securityCodeConfirm() {
+    this.inProgress = true;
+  }
 
-    async stopQR() {
-        $("#iQR").attr("src", "");
+  redirectIfAuthenticated() {
+    if (this._shared.isAuthenticated) {
+      this._router.navigate(["/overview"]);
     }
+  }
 
-    get recaptchaKey() {
-        return environment.recaptchaKey;
-    }
+  resolved(captchaResponse: string) {
+    this.userInfo.responseRecaptcha = captchaResponse;
+  }
+
+  private async setIsAuthenticated() {
+    this._shared.dataStore.isAuthenticated = this._shared.isTokenValid;
+  }
+
+  goToTop() {
+    jQuery(".page-register").scrollTop(0);
+  }
+
+  async startQR() {
+    $("#iQR").attr("src", "qr/qrcode/index.html?password");
+  }
+
+  async stopQR() {
+    $("#iQR").attr("src", "");
+  }
+
+  get recaptchaKey() {
+    return environment.recaptchaKey;
+  }
 }

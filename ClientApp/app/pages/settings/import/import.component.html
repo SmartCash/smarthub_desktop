@@ -1,0 +1,164 @@
+<div class="card">
+  <div class="card-header" [ngClass]="{ active: showForm }">
+    <i class="icon-price-min"></i>
+    <h3 class="h4">{{ "Import" | translate }}</h3>
+    <button [ngClass]="{ active: showForm }" (click)="showForm = !showForm">
+      &nbsp;
+    </button>
+  </div>
+  <form (ngSubmit)="onSubmit()" #importForm="ngForm" *ngIf="showForm">
+    <div class="card-body">
+      <div class="form-input">
+        <label for="privateKey">
+          {{ "Private Key" | translate }}: <span class="required">*</span>
+          <span
+            [hidden]="privateKey.valid || privateKey.pristine"
+            class="alert alert-danger"
+            >{{ "A valid Private Key is required." | translate }}</span
+          >
+        </label>
+        <input
+          id="privateKey"
+          name="privateKey"
+          type="text"
+          value=""
+          [(ngModel)]="import.privateKey"
+          #privateKey="ngModel"
+          autocomplete="off"
+          required
+        />
+        <button
+          type="button"
+          class="btn"
+          data-toggle="modal"
+          data-target="#modalQrCode"
+          id="btnQrCode"
+          (click)="startQR()"
+          *ngIf="hasQrCode"
+        >
+          <i class="icon-select-all"></i>
+        </button>
+      </div>
+      <div class="form-input form-input-w50">
+        <label for="userKey"
+          >{{ "Password" | translate }}: <span class="required">*</span>
+          <span
+            [hidden]="userKey.valid || userKey.pristine"
+            class="alert alert-danger"
+            >{{ "The password is required" | translate }}</span
+          ></label
+        >
+        <input
+          id="userKey"
+          [type]="inputTypePassword"
+          value=""
+          [(ngModel)]="import.userKey"
+          name="userKey"
+          required
+          #userKey="ngModel"
+          autocomplete="off"
+        />
+        <button
+          class="btn"
+          type="button"
+          (click)="showPassword()"
+          *ngIf="inputTypePassword == 'password'"
+          title="Show Password"
+        >
+          <i class="icon-eye"></i>
+        </button>
+        <button
+          class="btn"
+          type="button"
+          (click)="showPassword()"
+          *ngIf="inputTypePassword == 'text'"
+          title="Hide Password "
+        >
+          <i
+            class="icon-eye"
+            *ngIf="inputTypePassword == 'text'"
+            title="Hide Password "
+          ></i>
+        </button>
+      </div>
+      <div class="form-input form-input-w50">
+        <label for="label"
+          >{{ "Label" | translate }}: <span class="required">*</span>
+          <span
+            [hidden]="label.valid || label.pristine"
+            class="alert alert-danger"
+            >{{ "A valid Label is required." | translate }}</span
+          ></label
+        >
+        <input
+          id="label"
+          name="label"
+          type="text"
+          value=""
+          required
+          [(ngModel)]="import.label"
+          #label="ngModel"
+          autocomplete="off"
+        />
+      </div>
+      <div
+        *ngIf="response && !response.isValid"
+        class="alert alert-danger"
+        role="alert"
+      >
+        <strong>{{ "Error" | translate }}: </strong>
+        {{ response.error.message }}
+      </div>
+      <div
+        *ngIf="response && response.isValid"
+        class="alert alert-success"
+        role="alert"
+      >
+        <strong>{{ "Status" | translate }}: </strong>
+        {{ "Your KEY was imported successfully." | translate }}
+      </div>
+    </div>
+    <div class="card-footer">
+      <button
+        #btnSubmit
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="!importForm.form.valid || inProgress"
+      >
+        {{ "Import Now" | translate }}
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="modalQrCode" role="dialog" style="display: none">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button
+          type="button"
+          class="close"
+          data-dismiss="modal"
+          (click)="stopQR()"
+        >
+          &times;
+        </button>
+        <h4 class="modal-title">{{ "Scan your QR CODE" | translate }}</h4>
+      </div>
+      <div class="modal-body">
+        <iframe scrolling="no" id="iQR" src="" class="iframeQR"></iframe>
+      </div>
+      <div class="modal-footer text-right">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          data-dismiss="modal"
+          (click)="stopQR()"
+        >
+          {{ "Close" | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
