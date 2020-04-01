@@ -59,7 +59,7 @@
                     </div>
                 </div>
                 <div *ngIf="response && !response.isValid" class="alert-box alert-danger" role="alert">
-                    {{ response.error.message }}
+                    {{ response.error.message || response.error.Message }}
                 </div>
                 <div *ngIf="response && response.isValid" class="alert-box alert-success" role="alert">
                     {{'The 2FA has been removed, await until we redirect you.' | translate}}

@@ -91,7 +91,7 @@ export class OverviewComponent {
             if (!res.isValid) {
                 const swalError = Object.assign({
                     type: 'warning',
-                    text: res.error.message,
+                    text: res.error.message || res.error.Message,
                 }, swaloptions);
                 Swal(swalError);
                 return;
@@ -117,10 +117,10 @@ export class OverviewComponent {
             .then( async(response: any) => {
                 this._shared.updateGetInfo(response, this.userKey);
                 this.modalRef.hide();
-                if (response.error && response.error.message) {
+                if (response.error && response.error.message || response.error.Message) {
                     Swal({
                         type: 'error',
-                        text: response.error.message,
+                        text: response.error.message || response.error.Message,
                         customClass: 'animated fadeInDown',
                         showConfirmButton: false,
                         allowOutsideClick: false,

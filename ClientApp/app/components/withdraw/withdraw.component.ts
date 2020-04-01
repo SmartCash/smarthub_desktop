@@ -57,7 +57,7 @@ export class WithdrawComponent implements OnInit, OnDestroy {
                     if (!response.isValid) {
                         Swal({
                             type: 'warning',
-                            text: response.error.message,
+                            text: response.error.message || response.error.Message,
                             customClass: 'animated fadeInDown',
                             showConfirmButton: false,
                             allowOutsideClick: false,
@@ -104,7 +104,7 @@ export class WithdrawComponent implements OnInit, OnDestroy {
                     if (!response.isValid) {
                         Swal({
                             type: 'warning',
-                            text: response.error.message,
+                            text: response.error.message || response.error.Message,
                             customClass: 'animated fadeInDown',
                             showConfirmButton: false,
                             allowOutsideClick: false,

@@ -78,7 +78,7 @@
         </form>
         <div class="card card-1 alert alert-warning loader" role="alert" *ngIf="inProgress">{{'processing your request...' | translate}}</div>
         <div *ngIf="response && !response.isValid" class="card alert alert-danger" role="alert">
-            <strong>{{'Error' | translate}}: </strong> {{ response.error.message }}
+            <strong>{{'Error' | translate}}: </strong> {{ response.error.message || response.error.Message }}
         </div>
         <div *ngIf="response && response.isValid" class="card card-1 alert alert-success" role="alert">
             <strong>{{'Status' | translate}}: </strong> {{'Your vote has been computed. You are being redirected to the proposal list' | translate}}
