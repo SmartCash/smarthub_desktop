@@ -178,6 +178,7 @@ export class RegisterComponent implements OnInit {
     let token = new TokenRequest();
     token.username = this.userInfo.username;
     token.password = this.userInfo.password;
+    token.responseRecaptcha = this.userInfo.responseRecaptcha;
 
     await this._userService.getUserToken(token);
 
