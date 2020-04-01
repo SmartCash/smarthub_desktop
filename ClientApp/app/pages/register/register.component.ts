@@ -30,7 +30,6 @@ export class RegisterComponent implements OnInit {
   public sendText: string = "Send";
   public sendingText: string = "Sending...";
   public sendButtonText = this.sendText;
-  public errorMessage = "asdasd";
   public createResponse: any;
   public showInfoPanel: boolean = false;
   public export: any;
@@ -166,7 +165,6 @@ export class RegisterComponent implements OnInit {
     if (this.createResponse.isValid) {
       await this.Login();
     } else {
-      this.errorMessage = this.createResponse.error;
       this.userInfo.termsVersion = null!;
     }
 

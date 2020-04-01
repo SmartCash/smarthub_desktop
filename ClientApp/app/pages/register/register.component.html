@@ -308,14 +308,6 @@
             </button>
           </div>
 
-          <div
-            *ngIf="!errorMessage && errorMessage.length > 0"
-            class="alert alert-danger"
-            role="alert"
-          >
-            <strong>{{ "Error" | translate }}: </strong> {{ errorMessage }}
-          </div>
-
           <div class="gauth-pwa clearfix">
             <div class="gauth">
               <re-captcha
@@ -330,22 +322,22 @@
           </div>
           <div
             class="alert-box alert-danger"
-            *ngIf="!errorMessage && errorMessage.length > 0"
-          >
-            <strong>{{ "Error" | translate }}: </strong> {{ errorMessage }}
-          </div>
-          <div
-            class="alert-box alert-danger"
             role="alert"
             *ngIf="
               createResponse &&
               !createResponse.isValid &&
-              createResponse.error.message
+              (createResponse.error.Message || createResponse.error.message)
             "
           >
             <strong>{{ "Error" | translate }}:</strong>
-            {{ createResponse.error.message }}
+            {{ createResponse.error.Message || createResponse.error.message }}
           </div>
+
+          <div class="alert-box alert-warning loader" role="alert" *ngIf="sending">
+            <img src="/images/img_progress_sm_warning.gif" />
+            {{ "processing your request..." | translate }}
+          </div>
+
         </div>
         <div class="modal-footer">
           <div class="terms">
@@ -421,21 +413,6 @@
           [attr.data-clipboard-text]="export"
         >
           <i class="fa fa-clipboard"></i> {{ "copy" | translate }}
-        </button>
-      </div>
-
-      <div class="alert-box alert-warning loader" role="alert" *ngIf="sending">
-        <img src="/images/img_progress_sm_warning.gif" />
-        {{ "processing your request..." | translate }}
-      </div>
-
-      <div
-        class="button-goto"
-        role="alert"
-        *ngIf="createResponse && createResponse.isValid"
-      >
-        <button class="btn btn-primary" [routerLink]="['/overview']">
-          {{ "Go to overview" | translate }}
         </button>
       </div>
     </div>
