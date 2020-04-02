@@ -181,12 +181,27 @@ export class RegisterComponent implements OnInit {
     }
 
     Util.setButtonAsReadyState(this.btnSubmit);
+    // this.inProgress = false;
     this.sending = false;
     this.sendButtonText = this.sendText;
   }
 
+  async securityCodeConfirm() {
+    this.inProgress = true;
+  }
+
+  redirectIfAuthenticated() {
+    if (this._shared.isAuthenticated) {
+      this._router.navigate(["/overview"]);
+    }
+  }
+
   resolved(captchaResponse: string) {
     this.userInfo.responseRecaptcha = captchaResponse;
+  }
+
+  private async setIsAuthenticated() {
+    this._shared.dataStore.isAuthenticated = this._shared.isTokenValid;
   }
 
   goToTop() {
