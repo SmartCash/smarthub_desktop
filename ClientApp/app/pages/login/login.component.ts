@@ -94,6 +94,12 @@ export class LoginComponent implements OnInit {
 
   ErrorMessage: string = "";
 
+  resetCaptcha() {
+    if (grecaptcha) {
+      grecaptcha.reset();
+    }
+  }
+
   async login() {
     Util.setButtonAsWaitState(this.btnSubmit);
     this.inProgress = true;
@@ -105,10 +111,10 @@ export class LoginComponent implements OnInit {
       }
       if (!this._shared.isAuthenticated && this._shared.token.error !== null) {
         this.ErrorMessage = this._shared.token.error_description;
-        grecaptcha.reset();
+        this.resetCaptcha();
       }
     } catch (e) {
-      grecaptcha.reset();
+      this.resetCaptcha();
       this.ErrorMessage = "Invalid user or password";
     } finally {
       this.inProgress = false;

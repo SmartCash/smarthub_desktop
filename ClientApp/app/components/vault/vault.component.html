@@ -5,7 +5,7 @@
     <app-spinner *ngIf="_spinner.inProgress"></app-spinner>
     <div *ngIf="response && !response.isValid" class="card" role="alert">
         <div class="alert-box alert-danger">
-            {{'Error' | translate}}: <span [innerHtml]="response?.error?.message"></span>
+            {{'Error' | translate}}: <span [innerHtml]="response?.error?.message || response?.error?.Message"></span>
         </div>
     </div>
     <div *ngIf="response && response.isValid && !isUpdate && !isWithDraw" class="card" role="alert">

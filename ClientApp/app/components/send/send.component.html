@@ -52,7 +52,7 @@
     >
       <div class="alert-box alert-danger">
         {{ "Error" | translate }}:
-        <span [innerHtml]="response?.error?.message"></span>
+        <span [innerHtml]="response?.error?.message || response?.error?.Message"></span>
       </div>
     </div>
     <div *ngIf="response" class="card" role="alert">

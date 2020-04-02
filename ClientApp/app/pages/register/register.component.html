@@ -326,11 +326,11 @@
             *ngIf="
               createResponse &&
               !createResponse.isValid &&
-              (createresponse.error.message || response.error.Message || createresponse.error.message || response.error.Message)
+              (createResponse.error.message || createResponse.error.Message)
             "
           >
             <strong>{{ "Error" | translate }}:</strong>
-            {{ createresponse.error.message || response.error.Message || createresponse.error.message || response.error.Message }}
+            {{ createResponse.error.message || createResponse.error.Message }}
           </div>
 
           <div class="alert-box alert-warning loader" role="alert" *ngIf="sending">
