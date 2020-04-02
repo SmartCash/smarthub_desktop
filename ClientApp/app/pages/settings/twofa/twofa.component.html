@@ -116,7 +116,7 @@
       class="alert alert-danger"
       role="alert"
     >
-      <strong>{{ "Error" | translate }}: </strong> {{ response2.error.message }}
+      <strong>{{ "Error" | translate }}: </strong> {{ response2.error.message || response2.error.Message }}
     </div>
     <div
       *ngIf="response2 && response2.isValid"
@@ -131,7 +131,7 @@
       class="alert alert-danger"
       role="alert"
     >
-      <strong>{{ "Error" | translate }}: </strong> {{ response2.error.message }}
+      <strong>{{ "Error" | translate }}: </strong> {{ response2.error.message || response2.error.Message }}
     </div>
     <div
       *ngIf="
@@ -193,7 +193,7 @@
       class="alert alert-danger"
       role="alert"
     >
-      <strong>{{ "Error" | translate }}: </strong> {{ response3.error.message }}
+      <strong>{{ "Error" | translate }}: </strong> {{ response3.error.message || response3.error.Message }}
     </div>
     <div
       *ngIf="response3 && response3.isValid"

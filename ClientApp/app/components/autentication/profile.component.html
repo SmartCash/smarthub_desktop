@@ -51,7 +51,7 @@
                 <strong>{{'Response' | translate}}:</strong> {{'Your profile has been updated, await until we redirect you.' | translate}}
             </div>
             <div class="alert-box alert-danger" role="alert" *ngIf="createResponse && !createResponse.isValid">
-                <strong>{{'Error' | translate}}:</strong> {{ createResponse?.error?.message | translate}}
+                <strong>{{'Error' | translate}}:</strong> {{ createResponse?.error?.message || createResponse?.error?.Message | translate}}
             </div>
         </div>
     </form>

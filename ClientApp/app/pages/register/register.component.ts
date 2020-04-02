@@ -18,6 +18,8 @@ import { DeviceDetectorService } from "../../modules/ngx-device-detector/device-
 import { isPlatformBrowser } from "@angular/common";
 import { environment } from "../../app.environment";
 import { SpinnerService } from "../../services/spinner.service";
+import Swal from "sweetalert2";
+import { PrivateKeysGenerator } from '../register/privatekeys.generator';
 
 @Component({
   selector: "register",
@@ -30,7 +32,6 @@ export class RegisterComponent implements OnInit {
   public sendText: string = "Send";
   public sendingText: string = "Sending...";
   public sendButtonText = this.sendText;
-  public errorMessage = "asdasd";
   public createResponse: any;
   public showInfoPanel: boolean = false;
   public export: any;
@@ -164,9 +165,18 @@ export class RegisterComponent implements OnInit {
     this.createResponse = await this._userService.createUser(this.userInfo);
 
     if (this.createResponse.isValid) {
-      await this.Login();
+      Swal({
+        type: "success",
+        text: "Your account has been created, confirm to download your Master Security Code",
+        customClass: "animated fadeInDown",
+        showConfirmButton: true,
+        allowOutsideClick: false,
+        heightAuto: false
+      }).then(() => {
+        PrivateKeysGenerator.generate(null, this.userInfo.username, this.userInfo.recoveryKey);
+        this._router.navigate(["/login"]);
+      });
     } else {
-      this.errorMessage = this.createResponse.error;
       this.userInfo.termsVersion = null!;
     }
 
@@ -174,45 +184,6 @@ export class RegisterComponent implements OnInit {
     // this.inProgress = false;
     this.sending = false;
     this.sendButtonText = this.sendText;
-  }
-
-  async Login() {
-    let token = new TokenRequest();
-    token.username = this.userInfo.username;
-    token.password = this.userInfo.password;
-
-    await this._userService.getUserToken(token);
-
-    if (this._shared.isTokenValid) {
-      await this._userService.getUser(token);
-
-      await this._wallet.getWallet();
-
-      await this.setIsAuthenticated();
-
-      let exportResponse = await this._wallet.exportWallet({
-        data: this._shared.recoveryKey.recoveryKey,
-        userkey: token.password
-      });
-
-      if (Util.isValidObject(exportResponse) && exportResponse.isValid) {
-        await this._shared.exportPrivateKeys(
-          exportResponse,
-          token.username,
-          this._shared.recoveryKey.recoveryKey
-        );
-      }
-
-      let redirect = confirm(
-        "Did you save your Master Security Code and your Private Key? Can we redirect you?"
-      );
-
-      if (redirect) {
-        this.redirectIfAuthenticated();
-      } else {
-        this.showInfoPanel = true;
-      }
-    }
   }
 
   async securityCodeConfirm() {

@@ -107,7 +107,7 @@
         role="alert"
       >
         <strong>{{ "Error" | translate }}: </strong>
-        {{ response.error.message }}
+        {{ response.error.message || response.error.Message }}
       </div>
       <div
         *ngIf="response && response.isValid"

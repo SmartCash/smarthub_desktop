@@ -1,6 +1,6 @@
 <div *ngIf="response && !response.isValid" class="card" role="alert">
     <div class="alert-box alert-danger">
-        {{'Error' | translate}}: <span [innerHtml]="response?.error?.message"></span>
+        {{'Error' | translate}}: <span [innerHtml]="response?.error?.message || response?.error?.Message"></span>
     </div>
 </div>
 <div class="card-preview">
@@ -51,7 +51,7 @@
     </div>
     <div *ngIf="qrCode && !qrCode?.isValid" class="card" role="alert">
         <div class="alert-box alert-danger">
-            {{'Error' | translate}}: <span [innerHtml]="qrCode?.error?.message"></span>
+            {{'Error' | translate}}: <span [innerHtml]="qrCode?.error?.message || qrCode?.error?.Message"></span>
         </div>
     </div>
     <div class="card">

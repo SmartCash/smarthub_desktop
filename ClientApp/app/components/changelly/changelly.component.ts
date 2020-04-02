@@ -186,7 +186,7 @@ export class ChangellyComponent implements OnInit, OnDestroy {
             let bodyToSend = this.fromCurrency.extraFieldName ? body2 : body;
             const response: any = await this._shared.post('api/changelly/transaction', bodyToSend).then(response => response).catch((e) => console.log(e));
             if (response.isValid === false) {
-                this.errorMessage = response.error.message;
+                this.errorMessage = response.error.message || response.error.Message;
             }
             if (response.isValid) {
                 this.createdTransaction = response.data.result;

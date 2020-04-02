@@ -74,7 +74,7 @@ export class CreateRecurringPaymentComponent implements OnInit {
                     if (!response.isValid) {
                         const swalError = Object.assign({
                             type: 'warning',
-                            text: response.error.message,
+                            text: response.error.message || response.error.Message,
                         }, swaloptions);
                         Swal(swalError);
                         return;
