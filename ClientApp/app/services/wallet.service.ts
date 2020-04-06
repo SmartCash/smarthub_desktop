@@ -45,12 +45,11 @@ export class WalletService {
         return ret;
     }
 
-    async getPaymentFee(transaction: any): Promise<any> {
-
+    async getPaymentFee(transaction: any): Promise<any> {        
         let sapiUnspent = await this.getUnspent(transaction.fromAddress, transaction.amount);
-
-        return this.calculateFee(sapiUnspent.utxos);
-
+        if (sapiUnspent.utxos) {
+            return this.calculateFee(sapiUnspent.utxos);
+        }
     }
 
     async importWallet(transaction: any): Promise<any> {
@@ -167,7 +166,7 @@ export class WalletService {
         try {
             return await this._shared.post("api/Wallet/GetUnpents", {
                 "address": address,
-                "amount": amount,
+                "amount": Number(amount),
                 "random": true,
                 "instantpay": false
             });

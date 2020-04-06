@@ -53,6 +53,7 @@ export class SendComponent implements OnInit {
   public patterns = {
     "0": { pattern: new RegExp("^[0-9]+$") }
   };
+  timeoutId: any;
 
   get inProgress(): boolean {
     return this._inProgress;
@@ -248,7 +249,16 @@ export class SendComponent implements OnInit {
   }
 
   async getFee() {
-    this.transactionExtended.fee = 0.002;
+    const { fromAddress, amount } = this.transaction;
+
+    if (!fromAddress && !amount || amount === 0) {
+      return;
+    }
+
+    if (this.timeoutId) window.clearTimeout(this.timeoutId);
+    
+    this.timeoutId = window.setTimeout(async() => {
+      this.transactionExtended.fee = 0.002;
     let fee = await this._wallet.getPaymentFee(this.transaction);
     if (Util.isValidObject(fee) && fee.data > 0.002)
       this.transactionExtended.fee = fee.data;
@@ -256,6 +266,7 @@ export class SendComponent implements OnInit {
       this.transactionExtended.fee = fee.data + 0.001;
     if (_.isNumber(this.transaction.amount * 1))
       this.recalculateAmountWithFee();
+    }, 1000); 
   }
 
   trackByFn(item: any) {
