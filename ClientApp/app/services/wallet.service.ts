@@ -46,7 +46,11 @@ export class WalletService {
     }
 
     async getPaymentFee(transaction: any): Promise<any> {
-        return await this._shared.post("api/Wallet/GetPaymentFee", transaction);
+
+        let sapiUnspent = await this.getUnspent(transaction.fromAddress, transaction.amount);
+
+        return this.calculateFee(sapiUnspent.utxos);
+
     }
 
     async importWallet(transaction: any): Promise<any> {
