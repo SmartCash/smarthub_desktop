@@ -545,7 +545,11 @@ export class SendComponent implements OnInit {
     const urlApi = "api/ScheduledPayments/GetRecurrenceTypes";
     await this._shared
       .get(urlApi)
-      .then((data: any) => (this.recurrencetypes = data.data));
+      .then((data: any) => {
+        if (data && data.data) {
+          this.recurrencetypes = data.data
+        }
+      });
   }
 
   toggleSendTo() {
