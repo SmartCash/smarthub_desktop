@@ -52,7 +52,9 @@
     >
       <div class="alert-box alert-danger">
         {{ "Error" | translate }}:
-        <span [innerHtml]="response?.error?.message || response?.error?.Message"></span>
+        <span
+          [innerHtml]="response?.error?.message || response?.error?.Message"
+        ></span>
       </div>
     </div>
     <div *ngIf="response" class="card" role="alert">
@@ -184,7 +186,7 @@
             [dropSpecialCharacters]="false"
           />
         </div>
-        <div class="form-input input-amoutWithFee" style="width:100%;">
+        <div class="form-input input-amoutWithFee" style="width: 100%;">
           <label for="amountWithFee">
             {{ "Amount with fee" | translate }} in SMART
             <span
@@ -197,7 +199,6 @@
             type="text"
             [(ngModel)]="transactionExtended.amountWithFee"
             name="amountWithFee"
-            #amount="ngModel"
             required
             autocomplete="off"
             disabled
@@ -361,7 +362,17 @@
           </label>
           <select
             (change)="returnConversionRate($event.target.value)"
-            style="font-weight: 300;font-family: inherit;outline: 0;border: 0;border-bottom: 1px solid #efefef;display: block;width: 100%;padding: 5px 0 10px;font-size: 14px;"
+            style="
+              font-weight: 300;
+              font-family: inherit;
+              outline: 0;
+              border: 0;
+              border-bottom: 1px solid #efefef;
+              display: block;
+              width: 100%;
+              padding: 5px 0 10px;
+              font-size: 14px;
+            "
           >
             <option
               *ngFor="
@@ -395,7 +406,7 @@
             [dropSpecialCharacters]="false"
           />
         </div>
-        <div class="form-input input-amoutWithFee" style="width:100%;">
+        <div class="form-input input-amoutWithFee" style="width: 100%;">
           <label for="amountWithFee">
             {{ "Amount with fee" | translate }} in SMART
             <span
@@ -405,10 +416,9 @@
           </label>
           <input
             id="amountWithFee"
-            type="number"
+            type="text"
             [(ngModel)]="transactionExtended.amountWithFee"
             name="amountWithFee"
-            #amount="ngModel"
             required
             autocomplete="off"
             disabled
@@ -593,7 +603,7 @@
             [dropSpecialCharacters]="false"
           />
         </div>
-        <div class="form-input input-amoutWithFee" style="width:100%;">
+        <div class="form-input input-amoutWithFee" style="width: 100%;">
           <label for="amountWithFee">
             {{ "Amount with fee" | translate }} in SMART
             <span
@@ -603,10 +613,9 @@
           </label>
           <input
             id="amountWithFee"
-            type="number"
+            type="text"
             [(ngModel)]="transactionExtended.amountWithFee"
             name="amountWithFee"
-            #amount="ngModel"
             required
             autocomplete="off"
             disabled
@@ -702,10 +711,10 @@
     </form>
   </div>
   <div
-    class="modal animated fadeIn "
+    class="modal animated fadeIn"
     id="modalQrCode"
     role="dialog"
-    style="display:none"
+    style="display: none;"
   >
     <div class="modal-dialog">
       <div class="modal-content">
@@ -741,7 +750,7 @@
     class="modal animated fadeIn"
     id="myModalContact"
     role="dialog"
-    style="display:none;"
+    style="display: none;"
   >
     <div class="modal-dialog">
       <div class="modal-content">
@@ -819,7 +828,7 @@
     class="modal animated fadeIn"
     id="modalWallets"
     role="dialog"
-    style="display:none;"
+    style="display: none;"
   >
     <div class="modal-dialog">
       <div class="modal-content">

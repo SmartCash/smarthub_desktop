@@ -1,24 +1,22 @@
-import { SharedService } from "../../services/shared-service.service";
+import { DecimalPipe, isPlatformBrowser } from "@angular/common";
 import { Component, Inject, OnInit, PLATFORM_ID } from "@angular/core";
-import { WalletService } from "../../services/wallet.service";
-import { CurrentPriceService } from "../../services/current-price.service";
-import { Wallet } from "../../models/data/walletv2.data.model";
-import { ContactResponse } from "../../models/response/contact-response.model";
-import { DeviceDetectorService } from "../../modules/ngx-device-detector/device-detector.service";
-import { Util } from "../../models/util";
-import { DecimalPipe } from "@angular/common";
-import * as _ from "lodash";
+import { ActivatedRoute, Params, Router } from "@angular/router";
 import * as $ from "jquery";
-import { isPlatformBrowser } from "@angular/common";
-
-import { Router, ActivatedRoute, Params } from "@angular/router";
+import * as _ from "lodash";
+import { Wallet } from "../../models/data/walletv2.data.model";
 import { SendRequest } from "../../models/request/send-request.model";
+import { ContactResponse } from "../../models/response/contact-response.model";
+import { Util } from "../../models/util";
+import { DeviceDetectorService } from "../../modules/ngx-device-detector/device-detector.service";
+import { CurrentPriceService } from "../../services/current-price.service";
+import { SharedService } from "../../services/shared-service.service";
 import { UserService } from "../../services/user.service";
+import { WalletService } from "../../services/wallet.service";
 
 @Component({
   selector: "send",
   templateUrl: "./send.component.html",
-  providers: [DecimalPipe]
+  providers: [DecimalPipe],
 })
 export class SendComponent implements OnInit {
   public sub: any;
@@ -34,7 +32,7 @@ export class SendComponent implements OnInit {
     fee: 0,
     amountWithConversion: 0,
     amountWithFee: 0,
-    exchangeRate: 1.0
+    exchangeRate: 1.0,
   };
   public showWallets: boolean = false;
   public currentWalletIndex: number = 0;
@@ -51,7 +49,7 @@ export class SendComponent implements OnInit {
   public dateToSend: string = "Today";
   public minDateToSend: Date;
   public patterns = {
-    "0": { pattern: new RegExp("^[0-9]+$") }
+    "0": { pattern: new RegExp("^[0-9]+$") },
   };
   timeoutId: any;
 
@@ -166,7 +164,6 @@ export class SendComponent implements OnInit {
       return;
     }
     await this.getFee();
-    this.recalculateAmountWithFee();
   }
 
   onAmountChange(newValue: any) {
@@ -191,7 +188,9 @@ export class SendComponent implements OnInit {
   }
 
   async getExchangeRate() {
-    const currency = await this._currentPriceService.getCurrentPriceInExchange(this.ticker);
+    const currency = await this._currentPriceService.getCurrentPriceInExchange(
+      this.ticker
+    );
     this.transactionExtended.exchangeRate = currency.smartcash[this.ticker];
     this.recalculateAmountWithFee();
   }
@@ -251,22 +250,22 @@ export class SendComponent implements OnInit {
   async getFee() {
     const { fromAddress, amount } = this.transaction;
 
-    if (!fromAddress && !amount || amount === 0) {
+    if ((!fromAddress && !amount) || amount === 0) {
       return;
     }
 
     if (this.timeoutId) window.clearTimeout(this.timeoutId);
-    
-    this.timeoutId = window.setTimeout(async() => {
+
+    this.timeoutId = window.setTimeout(async () => {
       this.transactionExtended.fee = 0.002;
-    let fee = await this._wallet.getPaymentFee(this.transaction);
-    if (Util.isValidObject(fee) && fee.data > 0.002)
-      this.transactionExtended.fee = fee.data;
-    if (this.typeSend !== "ADDRESS")
-      this.transactionExtended.fee = fee.data + 0.001;
-    if (_.isNumber(this.transaction.amount * 1))
-      this.recalculateAmountWithFee();
-    }, 1000); 
+      let fee = await this._wallet.getPaymentFee(this.transaction);
+      if (Util.isValidObject(fee) && fee > 0.002)
+        this.transactionExtended.fee = fee;
+      if (this.typeSend !== "ADDRESS")
+        this.transactionExtended.fee = fee + 0.001;
+      if (_.isNumber(this.transaction.amount * 1))
+        this.recalculateAmountWithFee();
+    }, 1000);
   }
 
   trackByFn(item: any) {
@@ -279,7 +278,7 @@ export class SendComponent implements OnInit {
     }
 
     let currencies = this.fiatList;
-    currencies = Object.keys(currencies).map(function(k: any) {
+    currencies = Object.keys(currencies).map(function (k: any) {
       return { name: k, value: currencies[k] };
     });
     currencies = _.orderBy(currencies, "name", "asc");
@@ -358,7 +357,7 @@ export class SendComponent implements OnInit {
       ToAddress: this.transaction.toAddress.replace(/[\s]/g, ""),
       Amount: this.getAmountPayment(),
       UserKey: this.transaction.password,
-      code: this.transaction.code
+      code: this.transaction.code,
     });
   }
 
@@ -372,7 +371,7 @@ export class SendComponent implements OnInit {
         UserKey: this.transaction.password,
         code: this.transaction.code,
         DateShipped: new Date(this.transaction.transactionDate).toISOString(),
-        Currency: this.ticker
+        Currency: this.ticker,
       }
     );
   }
@@ -394,7 +393,7 @@ export class SendComponent implements OnInit {
         EndDate: this.transaction.endDate
           ? new Date(this.transaction.endDate).toISOString()
           : "",
-        Currency: this.ticker
+        Currency: this.ticker,
       }
     );
   }
@@ -470,12 +469,12 @@ export class SendComponent implements OnInit {
         phoneNumber: this.transaction.phoneNumber,
         messageToSend: this.messageToSend,
         code: this.transaction.code,
-        userKey: this.transaction.password
+        userKey: this.transaction.password,
       };
       this.response = await this._shared.post("api/Wallet/CreateOrder", body);
       if (this.response.status === "ERROR") {
         this.response = Object.assign(this.response, {
-          error: { message: this.response.data }
+          error: { message: this.response.data },
         });
       }
       if (this.response.status === "OK") {
@@ -505,10 +504,10 @@ export class SendComponent implements OnInit {
     try {
       this.contacts = await this._shared
         .get("api/Contact/Get")
-        .then(response => {
+        .then((response) => {
           return ContactResponse.map(response.data);
         })
-        .catch(function(e) {
+        .catch(function (e) {
           console.log(e);
         });
     } catch (e) {
@@ -543,13 +542,11 @@ export class SendComponent implements OnInit {
 
   async getRecurrenceTypes() {
     const urlApi = "api/ScheduledPayments/GetRecurrenceTypes";
-    await this._shared
-      .get(urlApi)
-      .then((data: any) => {
-        if (data && data.data) {
-          this.recurrencetypes = data.data
-        }
-      });
+    await this._shared.get(urlApi).then((data: any) => {
+      if (data && data.data) {
+        this.recurrencetypes = data.data;
+      }
+    });
   }
 
   toggleSendTo() {
@@ -559,20 +556,20 @@ export class SendComponent implements OnInit {
     switch (this.typeSend) {
       case "ADDRESS":
         contact = _.find(this.contacts, {
-          address: this.transaction.toAddress
+          address: this.transaction.toAddress,
         });
         wallet = _.find(this._shared.wallet, {
-          address: this.transaction.toAddress
+          address: this.transaction.toAddress,
         });
         break;
       case "EMAIL":
         contact = _.find(this.contacts, {
-          email: this.transaction.destinationEmail
+          email: this.transaction.destinationEmail,
         });
         break;
       case "SMS":
         contact = _.find(this.contacts, {
-          phone: this.transaction.phoneNumber
+          phone: this.transaction.phoneNumber,
         });
         break;
     }
